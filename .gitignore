@@ -1,0 +1,23 @@
+# PHP dependency/cache artifacts (none expected, safety net)
+*.log
+
+# Python backend caches (backend/.gitignore also covers these)
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment secrets and machine-local assistant settings
+.env
+.env.*
+!.env.example
+.claude/settings.json
+.claude/settings.local.json
+
+# Local environments and dependencies
+.venv/
+venv/
+node_modules/
+
+# OS / editor noise
+Thumbs.db
+.DS_Store

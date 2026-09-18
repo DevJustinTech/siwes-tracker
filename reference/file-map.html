@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The SIWES Tracker — File Map &amp; Course Plan</title>
+<link rel="stylesheet" href="../assets/teach/course.css">
+<style>
+  td:first-child { font-family: var(--mono); font-size: 0.8rem; white-space: nowrap; }
+  .done { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="course-tag">SIWES Tracker · Reference</p>
+  <h1>File map &amp; course plan</h1>
+  <p class="dek">Every core PHP file in the project, what it's for, and which lesson dissects it. The course's table of contents and progress tracker in one place.</p>
+
+  <div class="meta">Scope: root <code>.php</code> files + <code>partials/</code> + <code>database.sql</code>. The <code>backend/</code> folder (Python) is out of scope — this app never calls it.</div>
+
+  <h2><span class="num">1</span>The shape of the app</h2>
+
+  <p>Plain PHP, no framework: <strong>every page is one file</strong>. A browser asks Apache for <code>login.php</code>; Apache hands the file to the PHP interpreter, which runs top-to-bottom, mixing "compute" (PHP lines) with "emit" (HTML lines), and sends the resulting HTML back. That's the whole architecture. Shared machinery lives in three files every page pulls in:</p>
+
+<pre><code>every page ──require──▶ helpers.php ──require──▶ config.php   (constants + session start)
+                                   └─require──▶ partials/icons.php   (icon() function)
+
+logged-in pages ──require──▶ partials/layout-top.php    …page HTML…  layout-bottom.php</code></pre>
+
+  <h2><span class="num">2</span>Every file, in reading order</h2>
+
+  <table>
+    <tr><th>File</th><th>Lines</th><th>Role</th><th>Lesson</th></tr>
+    <tr><td>config.php</td><td>31</td><td>DB credentials, app constants, session cookie setup, timezone. Required first thing, everywhere.</td><td>2</td></tr>
+    <tr><td>helpers.php</td><td>121</td><td>All shared functions: <code>db()</code> (PDO), <code>e()</code>, <code>redirect()</code>, session/auth helpers, flash messages, CSRF trio, date helpers.</td><td>3–5</td></tr>
+    <tr><td>partials/icons.php</td><td>38</td><td><code>icon()</code> — returns inline SVG strings from a lookup array.</td><td>6</td></tr>
+    <tr><td>partials/layout-top.php</td><td>89</td><td>Shared page shell: &lt;head&gt;, sidebar, topbar, flash alerts. Reads <code>$page_title</code>/<code>$active</code> set by the page.</td><td>6</td></tr>
+    <tr><td>partials/layout-bottom.php</td><td>11</td><td>Closes the shell, footer, script tag.</td><td>6</td></tr>
+    <tr><td>login.php</td><td>84</td><td>The auth gate. One file handles both GET (show form) and POST (check credentials).</td><td>7</td></tr>
+    <tr><td>register.php</td><td>138</td><td>Account creation: validation, uniqueness checks, <code>password_hash</code>, INSERT.</td><td>8</td></tr>
+    <tr><td>logout.php</td><td>7</td><td>Smallest complete page: wipe session, redirect.</td><td>1</td></tr>
+    <tr><td>database.sql</td><td>54</td><td>Schema: <code>students</code> + <code>log_entries</code>, keys and constraints.</td><td>9</td></tr>
+    <tr><td>dashboard.php</td><td>176</td><td>Aggregate stats query, chart data massaging, recent-entries table.</td><td>10</td></tr>
+    <tr><td>logs.php</td><td>90</td><td>Read: list all entries, optional <code>?q=</code> keyword search via LIKE.</td><td>11</td></tr>
+    <tr><td>log_form.php</td><td>135</td><td>Create <em>and</em> update in one form (<code>?id=</code> switches mode). The heart of the app.</td><td>11</td></tr>
+    <tr><td>log_delete.php</td><td>54</td><td>Delete with a confirmation page instead of a bare link.</td><td>12</td></tr>
+    <tr><td>profile.php</td><td>158</td><td>Two forms, one page, dispatched by a hidden <code>action</code> field: edit details / change password.</td><td>12</td></tr>
+    <tr><td>seed.php</td><td>95</td><td>Demo-data loader. Also the app's only use of try/catch.</td><td>12</td></tr>
+    <tr><td>router.php</td><td>34</td><td>Only for <code>php -S</code>: serves static files, maps <code>/dashboard</code> → <code>dashboard.php</code>, 404s.</td><td>12</td></tr>
+  </table>
+
+  <h2><span class="num">3</span>Course structure</h2>
+
+  <p>The course is now a <strong>single complete guide</strong>: <a href="../lessons/0001-every-line-complete-guide.html">0001 — Every line, one lesson</a> (parts 1–13). The per-file lesson table in section 2 above doubles as its contents: each file's row names the part that dissects it.</p>
+
+  <div class="lesson-nav">
+    <span>Companion: <a href="php-glossary.html">PHP glossary</a></span>
+    <span><a href="../lessons/0001-every-line-complete-guide.html">The Complete Guide →</a></span>
+  </div>
+
+</div>
+</body>
+</html>

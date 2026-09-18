@@ -1,0 +1,2165 @@
+<title>SIWES Tracker Decoded</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --ground:#edf3f5; --surface:#ffffff; --surface-2:#f6fafb;
+    --ink:#12333d; --ink-soft:#55727d; --line:#d7e3e7; --line-strong:#c1d3d9;
+    --accent:#0891b2; --accent-ink:#0b6076; --accent-soft:#dcf2f7; --accent-soft-2:#eff9fb;
+    --amber:#b45309; --amber-soft:#fdf0dc;
+    --red:#c2344b;
+    --code-bg:#0b2b33; --code-ink:#d7ebf0; --code-dim:#7fa6b1; --code-head:#0e3540;
+    --rail:#0b3948; --rail-ink:#a9cbd5; --rail-ink-strong:#ffffff; --rail-line:#1d4b5c; --rail-active:rgba(34,211,238,.14);
+    --shadow:0 1px 2px rgba(16,51,62,.05),0 6px 22px rgba(16,51,62,.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0c1a20; --surface:#12242c; --surface-2:#0f2028;
+      --ink:#e0edf1; --ink-soft:#8ea9b2; --line:#1e3944; --line-strong:#2c505e;
+      --accent:#22d3ee; --accent-ink:#67e8f9; --accent-soft:#0e3a45; --accent-soft-2:#0b2e38;
+      --amber:#fbbf24; --amber-soft:#3a2b08;
+      --red:#f87171;
+      --rail:#0a161c;
+      --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 28px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0c1a20; --surface:#12242c; --surface-2:#0f2028;
+    --ink:#e0edf1; --ink-soft:#8ea9b2; --line:#1e3944; --line-strong:#2c505e;
+    --accent:#22d3ee; --accent-ink:#67e8f9; --accent-soft:#0e3a45; --accent-soft-2:#0b2e38;
+    --amber:#fbbf24; --amber-soft:#3a2b08;
+    --red:#f87171;
+    --rail:#0a161c;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 28px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box;margin:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Public Sans",system-ui,"Segoe UI",Arial,sans-serif;
+    font-size:16px;line-height:1.65;color:var(--ink);
+    background:var(--ground);display:flex;min-height:100vh;
+  }
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  dfn{font-style:normal;font-weight:600;border-bottom:2px dotted var(--accent);cursor:help}
+
+  /* ---- Rail ---- */
+  .rail{
+    width:272px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:var(--rail);color:var(--rail-ink);padding:26px 18px 30px;
+  }
+  .rail__brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:15px;padding:0 8px 4px}
+  .rail__logo{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;flex-shrink:0;
+    background:linear-gradient(135deg,#0891b2,#22d3ee);color:#fff;font-family:"Bricolage Grotesque",sans-serif;font-weight:800}
+  .rail__brand small{display:block;font-weight:400;font-size:11px;color:var(--rail-ink);letter-spacing:.4px;text-transform:uppercase}
+  .rail__nav{margin-top:18px;display:flex;flex-direction:column;gap:2px;font-size:13.5px}
+  .rail__part{margin-top:14px;padding:0 8px 4px;font-size:10.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--code-dim)}
+  .rail__link{display:flex;gap:8px;align-items:baseline;padding:6px 8px;border-radius:8px;color:var(--rail-ink);transition:background .15s ease,color .15s ease}
+  .rail__link:hover{background:rgba(255,255,255,.06);color:#fff;text-decoration:none}
+  .rail__link.is-active{background:var(--rail-active);color:var(--rail-ink-strong)}
+  .rail__link .n{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--code-dim);flex-shrink:0;width:16px}
+  .rail__foot{margin-top:26px;padding:14px 8px 0;border-top:1px solid var(--rail-line);font-size:11.5px;color:var(--code-dim);line-height:1.5}
+
+  /* ---- Doc ---- */
+  .doc{flex:1;min-width:0;padding:0 40px 90px}
+  .doc-inner{max-width:980px;margin:0 auto}
+
+  .hero{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:11.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--accent-ink);margin-bottom:12px}
+  .hero h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(30px,4.6vw,44px);letter-spacing:-.5px;line-height:1.08;text-wrap:balance;max-width:16ch}
+  .hero .lede{margin-top:14px;font-size:17.5px;color:var(--ink-soft);max-width:58ch}
+  .hero .meta{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+  .chip b{color:var(--ink)}
+
+  .part{padding-top:56px}
+  .part-head{display:flex;gap:18px;align-items:baseline;padding-bottom:14px;border-bottom:2px solid var(--ink);margin-bottom:26px}
+  .part-head .num{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:44px;color:var(--amber);line-height:1;flex-shrink:0}
+  .part-head h2{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:26px;letter-spacing:-.3px;text-wrap:balance}
+  .part-head p{color:var(--ink-soft);font-size:14.5px;margin-top:3px}
+
+  .file{margin:44px 0 0}
+  .file-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:6px}
+  .file-name{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:14.5px;background:var(--code-bg);color:var(--code-ink);padding:5px 12px;border-radius:8px}
+  .file-tag{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:3px 10px}
+  .file-what{color:var(--ink-soft);font-size:15px;max-width:70ch;margin-bottom:14px}
+  .file-what b{color:var(--ink)}
+
+  h3.sec{font-family:"Bricolage Grotesque",sans-serif;font-size:17px;font-weight:700;margin:26px 0 10px}
+  h3.sec .tick{color:var(--amber)}
+
+  /* code + note pairs */
+  .pair{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);gap:0;margin:0 0 14px;border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+  .code{background:var(--code-bg);min-width:0;overflow-x:auto}
+  .code-head{display:flex;justify-content:space-between;gap:10px;padding:7px 14px;background:var(--code-head);color:var(--code-dim);font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.5px}
+  .code pre{padding:12px 14px 14px;font-family:"JetBrains Mono",monospace;font-size:12.75px;line-height:1.6;color:var(--code-ink);white-space:pre}
+  .code .cm{color:var(--code-dim)}
+  .code .kw{color:#7dd3fc}
+  .code .st{color:#fcd34d}
+  .note{background:var(--surface);padding:14px 18px;font-size:14.5px;line-height:1.6;color:var(--ink);border-left:1px solid var(--line)}
+  .note b{color:var(--accent-ink)}
+  .note .lbl{display:block;font-size:10.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--accent-ink);margin-bottom:4px}
+  .note.warn{background:var(--amber-soft)}
+  .note.warn .lbl{color:var(--amber)}
+  .note p+p{margin-top:8px}
+  @media (max-width:900px){
+    .pair{grid-template-columns:1fr}
+    .note{border-left:none;border-top:1px solid var(--line)}
+  }
+
+  /* spec tables (css + icons) */
+  .spec-wrap{overflow-x:auto;margin:0 0 18px;border-radius:10px;box-shadow:var(--shadow)}
+  table.spec{width:100%;border-collapse:collapse;background:var(--surface);font-size:13.5px}
+  .spec th{ text-align:left;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft);padding:9px 14px;border-bottom:2px solid var(--line)}
+  .spec td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+  .spec tr:last-child td{border-bottom:none}
+  .spec td:first-child{font-family:"JetBrains Mono",monospace;font-size:12.5px;white-space:nowrap;color:var(--accent-ink)}
+  .spec td:last-child{color:var(--ink)}
+
+  /* primers */
+  .primer{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:0 0 16px;box-shadow:var(--shadow)}
+  .primer h4{font-family:"Bricolage Grotesque",sans-serif;font-size:16px;font-weight:700;margin-bottom:8px}
+  .primer h4 .sig{color:var(--amber)}
+  .primer ul{margin:6px 0 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:7px;font-size:14.5px}
+  .primer li{padding-left:0}
+  .primer code,.inline-code{font-family:"JetBrains Mono",monospace;font-size:.86em;background:var(--accent-soft-2);color:var(--accent-ink);padding:1.5px 6px;border-radius:6px;font-weight:600}
+  .primer table{width:100%;border-collapse:collapse;font-size:14px}
+  .primer td{padding:6px 10px 6px 0;border-bottom:1px dashed var(--line);vertical-align:top}
+  .primer tr:last-child td{border-bottom:none}
+
+  /* flow diagram */
+  .flow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;margin:18px 0;box-shadow:var(--shadow)}
+  .flow__lane{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;padding:10px 0}
+  .flow__lane+.flow__lane{border-top:1px dashed var(--line)}
+  .flow__box{background:var(--accent-soft-2);border:1px solid var(--line);border-radius:10px;padding:9px 14px;text-align:center;font-weight:700;font-size:13.5px;line-height:1.3}
+  .flow__box small{display:block;font-weight:400;color:var(--ink-soft);font-size:11.5px}
+  .flow__box--db{background:var(--amber-soft)}
+  .flow__box--api{background:var(--surface-2)}
+  .flow__arr{color:var(--accent-ink);font-weight:700;font-size:16px}
+  .flow__cap{text-align:center;font-size:12px;color:var(--ink-soft);padding-top:8px}
+
+  /* tips + callouts */
+  .tip{display:flex;gap:10px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 16px;margin:16px 0;font-size:14px;color:var(--ink)}
+  .tip b{color:var(--accent-ink)}
+  .tip.amber{border-left-color:var(--amber)}
+  .tip.amber b{color:var(--amber)}
+
+  /* glossary */
+  .gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:18px}
+  .gloss div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 16px;box-shadow:var(--shadow)}
+  .gloss dt{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:13px;color:var(--accent-ink);margin-bottom:3px}
+  .gloss dd{font-size:13.5px;color:var(--ink);line-height:1.55}
+
+  .foot{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:var(--ink-soft);font-size:13.5px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  @media (max-width:1000px){
+    .rail{display:none}
+    .doc{padding:0 20px 80px}
+  }
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav class="rail" aria-label="Guide contents">
+  <div class="rail__brand">
+    <span class="rail__logo">S</span>
+    <span>SIWES Tracker<small>decoded, line by line</small></span>
+  </div>
+  <div class="rail__nav" id="railNav">
+    <div class="rail__part">Start here</div>
+    <a class="rail__link" href="#part0"><span class="n">0</span> The big picture</a>
+    <div class="rail__part">The database</div>
+    <a class="rail__link" href="#database-sql"><span class="n">1</span> database.sql</a>
+    <div class="rail__part">Shared plumbing</div>
+    <a class="rail__link" href="#config-php"><span class="n">2</span> config.php</a>
+    <a class="rail__link" href="#helpers-php"><span class="n">2</span> helpers.php</a>
+    <a class="rail__link" href="#icons-php"><span class="n">2</span> partials/icons.php</a>
+    <a class="rail__link" href="#layout-top"><span class="n">2</span> layout-top.php</a>
+    <a class="rail__link" href="#layout-bottom"><span class="n">2</span> layout-bottom.php</a>
+    <div class="rail__part">Doors in &amp; out</div>
+    <a class="rail__link" href="#login-php"><span class="n">3</span> login.php</a>
+    <a class="rail__link" href="#register-php"><span class="n">3</span> register.php</a>
+    <a class="rail__link" href="#logout-php"><span class="n">3</span> logout.php</a>
+    <div class="rail__part">The working pages</div>
+    <a class="rail__link" href="#dashboard-php"><span class="n">4</span> dashboard.php</a>
+    <a class="rail__link" href="#logs-php"><span class="n">4</span> logs.php</a>
+    <a class="rail__link" href="#log-form"><span class="n">4</span> log_form.php</a>
+    <a class="rail__link" href="#log-delete"><span class="n">4</span> log_delete.php</a>
+    <a class="rail__link" href="#profile-php"><span class="n">4</span> profile.php</a>
+    <div class="rail__part">Helper scripts</div>
+    <a class="rail__link" href="#seed-php"><span class="n">5</span> seed.php</a>
+    <a class="rail__link" href="#router-php"><span class="n">5</span> router.php</a>
+    <div class="rail__part">Front-end</div>
+    <a class="rail__link" href="#app-js"><span class="n">6</span> assets/js/app.js</a>
+    <a class="rail__link" href="#style-css"><span class="n">7</span> assets/css/style.css</a>
+    <div class="rail__part">The Python twin</div>
+    <a class="rail__link" href="#requirements"><span class="n">8</span> requirements.txt</a>
+    <a class="rail__link" href="#env-example"><span class="n">8</span> .env.example</a>
+    <a class="rail__link" href="#py-main"><span class="n">8</span> app/main.py</a>
+    <a class="rail__link" href="#py-config"><span class="n">8</span> core/config.py</a>
+    <a class="rail__link" href="#py-database"><span class="n">8</span> core/database.py</a>
+    <a class="rail__link" href="#py-security"><span class="n">8</span> core/security.py</a>
+    <a class="rail__link" href="#py-models"><span class="n">8</span> app/models.py</a>
+    <a class="rail__link" href="#py-schemas"><span class="n">8</span> app/schemas.py</a>
+    <a class="rail__link" href="#py-deps"><span class="n">8</span> app/dependencies.py</a>
+    <a class="rail__link" href="#py-auth"><span class="n">8</span> router_auth.py</a>
+    <a class="rail__link" href="#py-logs"><span class="n">8</span> router_logs.py</a>
+    <a class="rail__link" href="#py-misc"><span class="n">8</span> router_misc.py</a>
+    <a class="rail__link" href="#py-init"><span class="n">8</span> __init__.py</a>
+    <a class="rail__link" href="#py-test"><span class="n">8</span> smoke_test.py</a>
+    <a class="rail__link" href="#py-gitignore"><span class="n">8</span> .gitignore</a>
+    <div class="rail__part">Wrap-up</div>
+    <a class="rail__link" href="#leftovers"><span class="n">9</span> Leftover folders</a>
+    <a class="rail__link" href="#readmes"><span class="n">9</span> The READMEs</a>
+    <a class="rail__link" href="#glossary"><span class="n">9</span> Dictionary</a>
+  </div>
+  <div class="rail__foot">Read in order the first time. After that, jump to any file — every line is accounted for.</div>
+</nav>
+
+<main class="doc"><div class="doc-inner">
+
+<header class="hero">
+  <p class="eyebrow">A study companion for the project author</p>
+  <h1>SIWES Tracker, decoded</h1>
+  <p class="lede">Every file in this project, explained the slow way — written for someone whose entire programming education so far is one YouTube video. No jargon without a translation right next to it.</p>
+  <div class="meta">
+    <span class="chip"><b>2</b> apps sharing <b>1</b> database</span>
+    <span class="chip"><b>32</b> files explained</span>
+    <span class="chip">PHP · SQL · CSS · JS · Python</span>
+  </div>
+</header>
+
+<!-- ============================ PART 0 ============================ -->
+<section class="part" id="part0">
+  <div class="part-head">
+    <span class="num">0</span>
+    <div><h2>The big picture</h2><p>Two minutes of groundwork so every line after this makes sense.</p></div>
+  </div>
+
+  <p>Your project is a <dfn>web app</dfn> — a program you use through a browser instead of by double-clicking a file. It does one job: let a student on industrial training log what they did each working day, and show it back as a tidy log book.</p>
+  <p>It's actually <b>two apps</b> that share one brain-storage:</p>
+
+  <div class="flow">
+    <div class="flow__lane">
+      <div class="flow__box">You<small>browser</small></div>
+      <span class="flow__arr">→</span>
+      <div class="flow__box">PHP pages<small>the app you see</small></div>
+      <span class="flow__arr">→</span>
+      <div class="flow__box flow__box--db">MySQL<small>the filing cabinet</small></div>
+    </div>
+    <div class="flow__lane">
+      <div class="flow__box flow__box--api">Other programs<small>like a phone app you might build later</small></div>
+      <span class="flow__arr">→</span>
+      <div class="flow__box">FastAPI<small>Python twin, no visible pages</small></div>
+      <span class="flow__arr">→</span>
+      <div class="flow__box flow__box--db">MySQL<small>same cabinet</small></div>
+    </div>
+    <p class="flow__cap">Both apps read and write the exact same two tables. Log a day in one, it appears in the other.</p>
+  </div>
+
+  <h3 class="sec"><span class="tick">›</span> How a website actually works</h3>
+  <div class="primer">
+    <ul>
+      <li><b>1.</b> Your browser sends a <dfn>request</dfn>: <i>"please give me the page at this address"</i>.</li>
+      <li><b>2.</b> A program called a <dfn>server</dfn> receives it. Here that's Apache (from XAMPP) or PHP's built-in server.</li>
+      <li><b>3.</b> The server runs the <dfn>PHP</dfn> file like a recipe: it checks the database, does sums, and mixes a finished <dfn>HTML</dfn> page.</li>
+      <li><b>4.</b> Only the finished page travels back. The browser never sees the recipe — just the dish.</li>
+    </ul>
+  </div>
+
+  <h3 class="sec"><span class="tick">›</span> The six mini-languages in this project</h3>
+
+  <div class="primer">
+    <h4><span class="sig">①</span> HTML — the skeleton</h4>
+    <p>Describes <i>what</i> is on the page: headings, boxes, buttons, forms. Everything lives between <code>&lt;tag&gt;</code> … <code>&lt;/tag&gt;</code> pairs.</p>
+    <table>
+      <tr><td style="width:38%"><code>&lt;h1&gt;Hi&lt;/h1&gt;</code></td><td>A big heading that says "Hi".</td></tr>
+      <tr><td><code>&lt;input name="email"&gt;</code></td><td>A box the user can type into. <code>name</code> is the label the value travels under.</td></tr>
+      <tr><td><code>&lt;form method="post"&gt;</code></td><td>A group of inputs + a submit button. Pressing it <i>sends</i> the values to the server.</td></tr>
+      <tr><td><code>&lt;div class="card"&gt;</code></td><td>An invisible box; <code>class</code> is the nickname CSS uses to dress it.</td></tr>
+    </table>
+  </div>
+
+  <div class="primer">
+    <h4><span class="sig">②</span> PHP — the kitchen</h4>
+    <p>Code that runs <i>on the server</i> before the page is sent. Anything between <code>&lt;?php</code> and <code>?&gt;</code> is PHP; anything outside it is just HTML printed as-is.</p>
+    <table>
+      <tr><td style="width:38%"><code>$name = "Ada";</code></td><td>A <dfn>variable</dfn> — a labelled box holding a value. The <code>$</code> marks every PHP variable.</td></tr>
+      <tr><td><code>echo $name;</code></td><td>Print into the page. <code>&lt;?= $x ?&gt;</code> is the same thing, shorthand, used inside HTML.</td></tr>
+      <tr><td><code>. </code> (a dot)</td><td>Glues two pieces of text together: <code>"a"."b"</code> is <code>"ab"</code>.</td></tr>
+      <tr><td><code>[1, 2, 3]</code></td><td>An <dfn>array</dfn> — a list. With names: <code>["email" =&gt; "a@b.c"]</code> is a labelled list.</td></tr>
+      <tr><td><code>function foo() {}</code></td><td>A <dfn>function</dfn> — a named mini-recipe you can run whenever.</td></tr>
+      <tr><td><code>? :</code> and <code>??</code></td><td><code>$a ?? $b</code> means <i>"use $a, but if it doesn't exist, use $b"</i>. Super common here.</td></tr>
+      <tr><td><code>foreach ($list as $item)</code></td><td>A <dfn>loop</dfn> — do this for every item in the list.</td></tr>
+      <tr><td><code>$_POST</code> / <code>$_GET</code> / <code>$_SESSION</code></td><td>Ready-made arrays PHP fills for you: what the form sent, what was in the URL, and the visitor's private locker.</td></tr>
+    </table>
+  </div>
+
+  <div class="primer">
+    <h4><span class="sig">③</span> SQL — talking to the filing cabinet</h4>
+    <p>The language <dfn>MySQL</dfn> (the database) understands. Four verbs run this whole project:</p>
+    <table>
+      <tr><td style="width:38%"><code>SELECT … FROM … WHERE</code></td><td>Read rows that match a condition.</td></tr>
+      <tr><td><code>INSERT INTO … VALUES</code></td><td>Add a new row.</td></tr>
+      <tr><td><code>UPDATE … SET … WHERE</code></td><td>Change existing rows.</td></tr>
+      <tr><td><code>DELETE FROM … WHERE</code></td><td>Remove rows.</td></tr>
+    </table>
+    <p style="margin-top:8px">The <code>?</code> in <code>WHERE id = ?</code> is a <dfn>prepared statement</dfn> slot: the value is filled in <i>separately</i>, so a sneaky user can't type SQL of their own into a form box (that trick is called <dfn>SQL injection</dfn> — the app blocks it everywhere).</p>
+  </div>
+
+  <div class="primer">
+    <h4><span class="sig">④</span> CSS — the clothes</h4>
+    <p>Describes <i>how things look</i>: colours, sizes, spacing. Pattern: <code>selector { property: value; }</code> — "for everything matching this nickname, style it like this". Full primer in Part 7.</p>
+  </div>
+
+  <div class="primer">
+    <h4><span class="sig">⑤</span> JavaScript — the muscles</h4>
+    <p>Code that runs <i>in the browser</i>, after the page arrives. It makes the page react: the dark-mode button, the slide-out menu, the show-password eye. One small file does all of it here.</p>
+  </div>
+
+  <div class="primer">
+    <h4><span class="sig">⑥</span> Python — the twin's language</h4>
+    <p>The <code>backend/</code> folder is the same app rebuilt as a pure API (a service that returns data, not pages) using the <dfn>FastAPI</dfn> framework.</p>
+    <table>
+      <tr><td style="width:38%"><code>from x import y</code></td><td>Borrow a ready-made tool from another file.</td></tr>
+      <tr><td><code>def foo(a, b):</code></td><td>A function. The colon + indentation (neat spaces) show what belongs to it.</td></tr>
+      <tr><td><code>class Student:</code></td><td>A <dfn>class</dfn> — a mould describing a kind of thing (a student) and what it holds.</td></tr>
+      <tr><td><code>@something</code></td><td>A <dfn>decorator</dfn> — a sticker stuck on a function that gives it extra powers.</td></tr>
+      <tr><td><code>a: int = 5</code></td><td>A variable <i>with a declared type</i>: "a is a whole number".</td></tr>
+    </table>
+  </div>
+
+  <div class="tip"><b>Reading order:</b> the database first (everything talks to it), then the shared plumbing every page reuses, then the pages themselves, then the front-end files, and finally the Python twin. Parts 1–9 below follow exactly that order.</div>
+</section>
+
+<!-- ============================ PART 1 ============================ -->
+<section class="part" id="database-sql">
+  <div class="part-head">
+    <span class="num">1</span>
+    <div><h2>The database</h2><p>One file defines the entire filing cabinet. Import it once and MySQL builds everything.</p></div>
+  </div>
+
+  <div class="file" >
+    <div class="file-head"><span class="file-name">database.sql</span><span class="file-tag">SQL · 53 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the blueprint. It creates the database <code class="inline-code">siwes_tracker</code> and its two tables. It isn't run by the app — <b>you</b> import it into phpMyAdmin once, and after that the tables just sit there holding data.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>lines 1–5</span></div>
+<pre>-- ============================================================
+-- SIWES Tracker — Database Schema
+-- Import this in phpMyAdmin (XAMPP) or:
+--   mysql -u root < database.sql
+-- ============================================================</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Lines starting with <code class="inline-code">--</code> are <b>comments</b> — notes for humans. MySQL skips them completely. This one tells you how to import the file (the <code class="inline-code">&lt;</code> means "pour this file into the mysql command").</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>lines 7–11</span></div>
+<pre>CREATE DATABASE IF NOT EXISTS siwes_tracker
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE siwes_tracker;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Line 7:</b> "make a new database named siwes_tracker — but only if one with that name doesn't already exist". The <code class="inline-code">IF NOT EXISTS</code> means re-running this file can never wipe your data.</p><p><b>Lines 8–9:</b> choose the alphabet. <code class="inline-code">utf8mb4</code> stores every character — emoji, accented letters like <i>ẹ</i> and <i>ọ</i>. <code class="inline-code">COLLATE</code> sets the sorting/comparing rules for that alphabet.</p><p><b>Line 11:</b> "work inside that database from now on."</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>lines 16–18</span></div>
+<pre>CREATE TABLE IF NOT EXISTS students (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  matric_no     VARCHAR(40)  NOT NULL UNIQUE,</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Make a table (a folder of rows) called <code class="inline-code">students</code>. Each line below names a <b>column</b> and the rules for it.</p><p><b>id:</b> a number (<code class="inline-code">INT</code>) that fills itself in (<code class="inline-code">AUTO_INCREMENT</code>): 1, 2, 3… <code class="inline-code">PRIMARY KEY</code> makes it the official ID — every row gets a different one. <code class="inline-code">UNSIGNED</code> = no negative numbers allowed.</p><p><b>matric_no:</b> text up to 40 characters (<code class="inline-code">VARCHAR(40)</code>). <code class="inline-code">NOT NULL</code> = must be filled in. <code class="inline-code">UNIQUE</code> = no two students may share one.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>lines 19–27</span></div>
+<pre>  full_name     VARCHAR(120) NOT NULL,
+  email         VARCHAR(160) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  institution   VARCHAR(160) NULL,
+  course_of_study VARCHAR(120) NULL,
+  placement_org VARCHAR(160) NULL,
+  industry_supervisor VARCHAR(160) NULL,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>full_name, email:</b> more text columns. Email is also <code class="inline-code">UNIQUE</code> — one account per address.</p><p><b>password_hash:</b> where the <i>scrambled</i> password lives. The real password is never stored anywhere — more in Part 2.</p><p><b>institution → supervisor:</b> <code class="inline-code">NULL</code> means "this column is allowed to be empty".</p><p><b>created_at:</b> MySQL stamps the current time (<code class="inline-code">DEFAULT CURRENT_TIMESTAMP</code>) automatically when a row is added. <b>updated_at:</b> re-stamps itself every time the row changes (<code class="inline-code">ON UPDATE</code>).</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>line 28</span></div>
+<pre>) ENGINE=InnoDB;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Picks the storage engine — the machinery under the table. <b>InnoDB</b> is the modern one; it's required for the relationship tricks used below (foreign keys).</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>lines 34–41</span></div>
+<pre>CREATE TABLE IF NOT EXISTS log_entries (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  student_id    INT UNSIGNED NOT NULL,
+  entry_date    DATE NOT NULL,                -- the day worked
+  hours_worked  DECIMAL(4,1)  NOT NULL DEFAULT 8.0,
+  work_done     TEXT NOT NULL,                -- what was done that day</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>The second table: one row = one logged <b>day</b>.</p><p><b>student_id:</b> a plain number — but see line 44, where it becomes a link.</p><p><b>entry_date:</b> a date — the actual day the student worked. No snapping, no "Monday of the week": the date you pick is the date stored.</p><p><b>hours_worked:</b> <code class="inline-code">DECIMAL(4,1)</code> = up to 4 digits with exactly 1 after the decimal point — precise for numbers like 7.5. <code class="inline-code">DEFAULT 8.0</code> = "if nobody says otherwise, fill in a normal 8-hour day".</p><p><b>work_done:</b> <code class="inline-code">TEXT</code> = long free text, required.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>lines 42–47</span></div>
+<pre>  challenges    TEXT NULL,                    -- optional field
+  remarks       TEXT NULL,                    -- supervisor's remark (optional)
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_student_day (student_id, entry_date)
+) ENGINE=InnoDB;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>challenges, remarks:</b> optional long text (<code class="inline-code">NULL</code>). Remarks is reserved for the supervisor.</p><p><b>Line 44 — the link:</b> <code class="inline-code">FOREIGN KEY</code> says "student_id must point at a real row in students". <code class="inline-code">ON DELETE CASCADE</code> is the tidy-up rule: delete a student, and all their log entries vanish automatically too — no orphan rows left behind.</p><p><b>Line 45 — the star rule:</b> the <i>pair</i> (student_id, entry_date) must be unique together. Translation: <b>one entry per student per day</b>, enforced by the database itself — even if the PHP code had a bug, the cabinet would refuse duplicates. <code class="inline-code">uq_student_day</code> is just the rule's nickname.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>SQL</span><span>lines 50–55</span></div>
+<pre>-- (Optional) Seed a demo account:
+--   email:    demo@siwes.test
+--   password: demo1234
+-- (Add hashes via the register page instead — safer.)
+-- ------------------------------------------------------------</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Another comment. It mentions the demo account created by <code class="inline-code">seed.php</code> (Part 5), and warns that putting a real password hash in this file by hand is fiddly — registering through the app is the safe route.</p></div></div>
+
+    <div class="tip"><b>That's the whole database.</b> Two tables, one link between them, one "one entry per day" rule. Every other file in this project is just reading and writing these two tables.</div>
+  </div>
+</section>
+
+<!-- ============================ PART 2 ============================ -->
+<section class="part" id="config-php">
+  <div class="part-head">
+    <span class="num">2</span>
+    <div><h2>The shared plumbing</h2><p>Five files that every page reuses: settings, superpowers, icons, and the page frame.</p></div>
+  </div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">config.php</span><span class="file-tag">PHP · 31 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the settings sheet. Database password, app name, and a few "always do this" instructions. Every page loads it first, so you only write the settings <b>once</b>.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 1–7</span></div>
+<pre>&lt;?php
+/**
+ * SIWES Tracker — configuration
+ * Adjust the DB credentials below to match your XAMPP setup.
+ */
+
+declare(strict_types=1);</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Line 1:</b> <code class="inline-code">&lt;?php</code> means "PHP starts here — pay attention, code incoming."</p><p><b>Lines 2–5:</b> a comment block for humans.</p><p><b>Line 7:</b> tells PHP "be strict": if code hands a number where text was expected, complain loudly instead of silently guessing. Catches bugs early — like a spellchecker set to maximum.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 10–18</span></div>
+<pre>define('DB_HOST', '127.0.0.1');
+define('DB_NAME', 'siwes_tracker');
+define('DB_USER', 'root');
+define('DB_PASS', '');          // XAMPP default: empty password
+define('DB_PORT', 3306);
+
+define('APP_NAME', 'SIWES Tracker');
+define('APP_URL', '/siwes%20tracker');</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><code class="inline-code">define()</code> creates a <b>constant</b> — like a variable, but locked: once set, nothing can change it. Perfect for settings.</p><p><b>DB_HOST '127.0.0.1':</b> the address "this same computer" (its nickname is <i>localhost</i>). <b>DB_PORT 3306:</b> the door number MySQL answers on. <b>DB_USER root / DB_PASS '':</b> XAMPP's default login — full access, no password. Fine for practice at home, never on a real website.</p><p><b>APP_URL:</b> the folder name where the project lives on the server (<code class="inline-code">%20</code> is how a space is written in web addresses).</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 21–30</span></div>
+<pre>if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'httponly' =&gt; true,
+        'samesite' =&gt; 'Lax',
+    ]);
+    session_start();
+}
+
+date_default_timezone_set('Africa/Lagos');</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The session:</b> how the site remembers "this browser is logged in as Ada" between page loads. PHP gives each visitor a <dfn>session</dfn> — a private locker on the server, and the visitor keeps the key (a small token called a cookie) in their browser.</p><p><b>Line 21:</b> "if a session hasn't been started yet…" (the <code class="inline-code">===</code> means "exactly equal"). <b>Lines 22–25:</b> set the cookie's safety settings: <code class="inline-code">httponly</code> = JavaScript on the page is forbidden from touching the session key (blocks a common attack called <dfn>XSS stealing</dfn>); <code class="inline-code">samesite Lax</code> = other websites can't smuggle this cookie along on their own requests (blocks another attack called <dfn>CSRF</dfn> — more below).</p><p><b>Line 26:</b> open the locker. <b>Line 30:</b> use Nigerian time, so dates show correctly.</p></div></div>
+  </div>
+
+  <div class="file" id="helpers-php">
+    <div class="file-head"><span class="file-name">helpers.php</span><span class="file-tag">PHP · 120 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the toolbox: a dozen small functions the whole app shares — connecting to the database, printing safely, logging people in, guard tokens, and the two date helpers at the end. If a page needs a superpower, it's probably defined here.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 6–9</span></div>
+<pre>declare(strict_types=1);
+
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/icons.php';</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>require_once:</b> "load this other file, and only once even if I'm asked twice." Loading <code class="inline-code">config.php</code> here is why every page only needs to load <code class="inline-code">helpers.php</code> — it drags its friends along.</p><p><code class="inline-code">__DIR__</code> is "the folder this file is in", so it works no matter where the project is moved.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 11–24</span></div>
+<pre>/** PDO connection (lazy, shared) */
+function db(): PDO
+{
+    static $pdo = null;
+    if ($pdo === null) {
+        $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE            =&gt; PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE =&gt; PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   =&gt; false,
+        ]);
+    }
+    return $pdo;
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>This builds the <b>phone line to MySQL</b>. <dfn>PDO</dfn> is PHP's standard way of talking to databases.</p><p><b>Line 14:</b> <code class="inline-code">static $pdo = null</code> — remember the connection between calls, so we don't dial MySQL 20 times per page. "Lazy" means: don't connect until the first time someone actually needs it.</p><p><b>Line 16:</b> the <dfn>DSN</dfn> — a one-line address: "MySQL, at this host, this port, this database, speaking utf8mb4". The dots glue the pieces of text together.</p><p><b>Line 17:</b> actually connect, using the constants from config.php. <b>Lines 18–21:</b> three settings: <i>ERRMODE_EXCEPTION</i> = "if something breaks, scream immediately" (so errors aren't silently ignored); <i>FETCH_ASSOC</i> = "give me rows as labelled lists" (<code class="inline-code">$row['email']</code> instead of <code class="inline-code">$row[2]</code>); <i>EMULATE_PREPARES false</i> = let MySQL itself handle <code class="inline-code">?</code> slots — the genuinely safe way.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 26–37</span></div>
+<pre>/** Escape for HTML output */
+function e(?string $value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+/** Redirect and stop */
+function redirect(string $path): void
+{
+    header('Location: ' . $path);
+    exit;
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>e() — the most-used function in the project.</b> Before printing <i>anything</i> a user typed, it converts dangerous characters: <code class="inline-code">&lt;</code> becomes <code class="inline-code">&amp;lt;</code>, quotes become safe codes. If someone typed <code class="inline-code">&lt;script&gt;</code> into a form, the page would show it as harmless text instead of running it. That's the fix for the XSS attack. <code class="inline-code">?string</code> means "text, or possibly nothing (null)".</p><p><b>redirect():</b> sends the browser a note saying "go to this other page instead", then <code class="inline-code">exit</code> stops the script dead — nothing after a redirect should run.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 39–52</span></div>
+<pre>/** Is the current visitor logged in? */
+function is_logged_in(): bool
+{
+    return isset($_SESSION['student_id']);
+}
+
+/** Require login — call at the top of protected pages */
+function require_login(): void
+{
+    if (!is_logged_in()) {
+        $_SESSION['flash_error'] = 'Please log in to continue.';
+        redirect('login.php');
+    }
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>is_logged_in():</b> "does the visitor's locker have a student_id in it?" When you logged in (Part 3), the page wrote your ID into that locker. If it's there, you're logged in. Returns a <dfn>bool</dfn> — true or false.</p><p><b>require_login():</b> the bouncer. Pages like dashboard.php put this at the very top: no ID in the locker? → leave a "please log in" message and bounce to the login page. The <code class="inline-code">!</code> means "not".</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 54–78</span></div>
+<pre>/** Currently logged-in student row (cached) */
+function current_student(): ?array
+{
+    static $student = null;
+    static $loaded  = false;
+    if (!$loaded &amp;&amp; is_logged_in()) {
+        $stmt = db()-&gt;prepare('SELECT * FROM students WHERE id = ?');
+        $stmt-&gt;execute([$_SESSION['student_id']]);
+        $student = $stmt-&gt;fetch() ?: null;
+        $loaded  = true;
+    }
+    return $student;
+}
+
+/** One-shot flash messages */
+function flash(string $key, ?string $message = null): ?string
+{
+    if ($message !== null) {
+        $_SESSION['flash_' . $key] = $message;
+        return null;
+    }
+    $value = $_SESSION['flash_' . $key] ?? null;
+    unset($_SESSION['flash_' . $key]);
+    return $value;
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>current_student():</b> fetches the full row of the logged-in student from the database. <code class="inline-code">?array</code> = "a labelled list, or nothing". Again <code class="inline-code">static</code>: fetch once per page, then remember — so five different spots on a page can ask without five database trips. Notice the <code class="inline-code">?</code> slot and <code class="inline-code">execute([...])</code> pattern — the safe prepared-statement way of putting your ID into the query.</p><p><b>flash():</b> those little green "Entry updated ✓" messages. The trick: page A saves the message in the session, sends you to page B, and page B shows it <i>once</i> and deletes it (that's the <code class="inline-code">unset</code>). That's why refreshing never shows a stale message twice. The same function stores messages (with a second argument) and reads them (without).</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 80–103</span></div>
+<pre>/** CSRF token (create + return) */
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/** CSRF hidden input for forms */
+function csrf_field(): string
+{
+    return '&lt;input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"&gt;';
+}
+
+/** Verify CSRF on POST requests — call before handling any POST */
+function csrf_verify(): void
+{
+    $token = $_POST['csrf_token'] ?? '';
+    if (!is_string($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        http_response_code(419);
+        exit('Page expired — please go back and try again.');
+    }
+}</pre></div>
+    <div class="note"><span class="lbl">The CSRF guard, in three pieces</span><p><dfn>CSRF</dfn> ("Cross-Site Request Forgery") is this attack: you're logged into the tracker in one tab; in another tab, an evil page has a hidden form that quietly submits "delete my entry" <i>to the tracker as you</i>. The browser attaches your session cookie automatically, so the tracker can't tell it wasn't you.</p><p><b>The fix — a secret handshake:</b> <code class="inline-code">csrf_token()</code> invents a 64-character random string (line 84: 32 random bytes written as hex) and keeps it in your locker. <code class="inline-code">csrf_field()</code> hides it inside every real form. <code class="inline-code">csrf_verify()</code> runs whenever a form is submitted: "did the form bring the exact secret only <b>our</b> page could have put there?" The evil page doesn't know the secret, so its sneaky submission fails with error 419.</p><p><code class="inline-code">hash_equals()</code> compares the strings in a way that leaks no timing hints — the professional touch.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 105–120</span></div>
+<pre>/** Friendly "Wed 09 Sep 2026" day label */
+function day_label(string $date): string
+{
+    return date('D d M Y', strtotime($date));
+}
+
+/** SIWES week number since the student's first entry (min 1) */
+function siwes_week_number(array $student, string $date): int
+{
+    $stmt = db()-&gt;prepare('SELECT MIN(entry_date) FROM log_entries WHERE student_id = ?');
+    $stmt-&gt;execute([$student['id']]);
+    $first = $stmt-&gt;fetchColumn();
+    if (!$first) return 1;
+    $weeks = (int)floor((strtotime($date) - strtotime((string)$first)) / 604800);
+    return max(1, $weeks + 1);
+}</pre></div>
+    <div class="note"><span class="lbl">The date helpers</span><p><b>day_label():</b> turns "2026-09-09" into the pretty "Wed 09 Sep 2026" you see in the tables. <code class="inline-code">strtotime</code> converts the stored date into a <i>timestamp</i> (a count of seconds since 1970 — computers prefer counting seconds), and <code class="inline-code">date('D d M Y')</code> formats it back with the weekday (<code class="inline-code">D</code>), day, month, and year.</p><p><b>siwes_week_number():</b> even in a daily log book, supervisors love week numbers — so this asks the database "what's the earliest day this student ever logged?" (<code class="inline-code">MIN</code> = smallest value). Then: seconds between this day and that first day, divided by 604800 (the number of seconds in 7 days), rounded down = how many weeks in. <code class="inline-code">max(1, …)</code> means "never answer less than 1" — Week 1, not Week 0. That's what prints the little "Week 3" under each entry.</p></div></div>
+  </div>
+
+  <div class="file" id="icons-php">
+    <div class="file-head"><span class="file-name">partials/icons.php</span><span class="file-tag">PHP · 38 lines</span></div>
+    <p class="file-what"><b>What it is:</b> a picture book. Every small icon in the app (house, book, bin, moon…) is stored here as <dfn>SVG</dfn> — a tiny drawing described with coordinates instead of pixels, so it stays sharp at any size.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 7–10, 33–36</span></div>
+<pre>function icon(string $name, string $class = 'icon'): string
+{
+    $paths = [
+        'home'   =&gt; '&lt;path d="M3 10.5 12 3l9 7.5"/&gt;...',
+        'book'   =&gt; '&lt;path d="M4 19.5A2.5 ..."/&gt;...',
+        ...21 icons total...
+    ];
+
+    $d = $paths[$name] ?? $paths['check'];
+    return '&lt;svg class="' . e($class) . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+         . 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;'
+         . $d . '&lt;/svg&gt;';
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>One function, two parts:</p><p><b>1. A dictionary of drawings.</b> Each icon is a few <code class="inline-code">&lt;path&gt;</code> instructions — literally "move here, curve there", on a 24×24 grid. (This set borrows the style of a free icon library called Lucide.)</p><p><b>2. The wrapper.</b> Line 33: <code class="inline-code">$paths[$name] ?? $paths['check']</code> — "get the icon they asked for; if it doesn't exist, quietly use the checkmark instead" (no crashes over a typo'd icon name).</p><p>The <code class="inline-code">return</code> builds the final <code class="inline-code">&lt;svg&gt;</code> tag. <code class="inline-code">stroke="currentColor"</code> is the clever bit: the icon inherits whatever colour the text around it has — so the same icon automatically adapts to dark mode, hover colours, everything. <code class="inline-code">aria-hidden="true"</code> tells screen readers "this is decoration, skip it".</p><p>Usage anywhere in a page: <code class="inline-code">&lt;?= icon('trash') ?&gt;</code>.</p></div></div>
+  </div>
+
+  <div class="file" id="layout-top">
+    <div class="file-head"><span class="file-name">partials/layout-top.php</span><span class="file-tag">PHP · 89 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the top half of a reusable picture frame. Every page inside the app (dashboard, log book, profile…) looks identical around the edges — dark sidebar, white top bar, green/red messages. Instead of copy-pasting that into every page, they all <b>require</b> this one file.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 13–25</span></div>
+<pre>require_once __DIR__ . '/../helpers.php';
+
+$page_title = $page_title ?? APP_NAME;
+$active     = $active     ?? '';
+$student    = current_student();
+$flashError = flash('error');
+$flashSuccess = flash('success');
+
+$navItems = [
+    'dashboard' =&gt; ['Dashboard',  icon('home')],
+    'logs'      =&gt; ['My Log Book', icon('book')],
+    'profile'   =&gt; ['Profile',     icon('user')],
+];</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Load the toolbox. Then gather everything the frame needs:</p><p><b>$page_title ?? APP_NAME:</b> "use the title the page set <i>before</i> including me — but if it forgot, fall back to the app name." This only works because of PHP's include order: the page sets <code class="inline-code">$page_title = 'Dashboard'</code> first, and <i>then</i> pulls this file in.</p><p><b>$active:</b> which sidebar item should be highlighted. <b>$student:</b> your row from the DB (for the corner avatar). <b>flash(…):</b> collect any pending success/error messages — calling this here is what makes them appear on <i>any</i> page and disappear after one look.</p><p><b>$navItems:</b> the three menu links, each with its icon, in one array so the loop below can build them.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 27–35</span></div>
+<pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;meta charset="UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+&lt;title&gt;&lt;?= e($page_title) ?&gt; · &lt;?= e(APP_NAME) ?&gt;&lt;/title&gt;
+&lt;link rel="stylesheet" href="assets/css/style.css"&gt;
+&lt;/head&gt;
+&lt;body data-theme="light"&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>The standard opening of every HTML page: <b>DOCTYPE</b> = "this is a modern HTML document"; <b>charset UTF-8</b> = allow any characters (é, 猫, emoji); <b>viewport</b> = "fit the screen on phones properly".</p><p><b>&lt;title&gt;:</b> the text on the browser tab — built as "Page name · SIWES Tracker", safely escaped with <code class="inline-code">e()</code>. <b>link stylesheet:</b> fetch the clothes (Part 7). <b>data-theme="light":</b> a small tag on the page's root that JavaScript flips to "dark" — CSS watches it (you'll see <code class="inline-code">:root[data-theme="dark"]</code> in Part 7).</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 38–66</span></div>
+<pre>&lt;aside class="sidebar" id="sidebar"&gt;
+    &lt;div class="sidebar__brand"&gt;
+        &lt;span class="sidebar__logo"&gt;&lt;?= icon('cap') ?&gt;&lt;/span&gt;
+        &lt;span class="sidebar__name"&gt;&lt;?= e(APP_NAME) ?&gt;&lt;/span&gt;
+    &lt;/div&gt;
+
+    &lt;nav class="sidebar__nav" aria-label="Main navigation"&gt;
+        &lt;?php foreach ($navItems as $key =&gt; [$label, $svg]): ?&gt;
+            &lt;a class="sidebar__link &lt;?= $active === $key ? 'is-active' : '' ?&gt;"
+               href="&lt;?= e($key) ?&gt;.php" &lt;?= $active === $key ? 'aria-current="page"' : '' ?&gt;&gt;
+                &lt;?= $svg ?&gt;&lt;span&gt;&lt;?= e($label) ?&gt;&lt;/span&gt;
+            &lt;/a&gt;
+        &lt;?php endforeach; ?&gt;
+    &lt;/nav&gt;
+
+    &lt;div class="sidebar__footer"&gt;
+        &lt;div class="sidebar__user"&gt;
+            &lt;span class="avatar" aria-hidden="true"&gt;&lt;?= e(strtoupper(mb_substr($student['full_name'] ?? 'S', 0, 1))) ?&gt;&lt;/span&gt;
+            ...
+        &lt;/div&gt;
+        &lt;a class="btn btn--ghost btn--sm btn--block" href="logout.php"&gt;...&lt;/a&gt;
+    &lt;/div&gt;
+&lt;/aside&gt;
+&lt;div class="sidebar-backdrop" id="sidebarBackdrop" hidden&gt;&lt;/div&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>&lt;aside&gt;:</b> the dark sidebar. The brand row is the graduation-cap logo + app name.</p><p><b>The foreach loop</b> is the neat trick: instead of writing three nearly-identical <code class="inline-code">&lt;a&gt;</code> links by hand, it walks the <code class="inline-code">$navItems</code> array and builds one per entry. The shorthand <code class="inline-code">[$label, $svg]</code> unpacks each item's two values straight into two variables. The <code class="inline-code">? :</code> inline says: "if <i>this</i> page is the active one, add the <code class="inline-code">is-active</code> class (and <code class="inline-code">aria-current="page"</code>, which tells screen readers 'you are here') — otherwise add nothing."</p><p><b>The footer:</b> your avatar is simply the <b>first letter of your name</b> — <code class="inline-code">mb_substr($name, 0, 1)</code> grabs one character (<code class="inline-code">mb_</code> = the version that understands all alphabets), <code class="inline-code">strtoupper</code> capitalises it. Then the log-out button.</p><p><b>The backdrop:</b> the dim grey curtain that appears behind the sidebar on phones — <code class="inline-code">hidden</code> starts it invisible; JavaScript shows it (Part 6).</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 69–89</span></div>
+<pre>&lt;div class="main"&gt;
+    &lt;header class="topbar"&gt;
+        &lt;button class="icon-btn sidebar-toggle" id="sidebarToggle" aria-label="Open menu"&gt;
+            &lt;?= icon('menu') ?&gt;
+        &lt;/button&gt;
+        &lt;div class="topbar__title"&gt;
+            &lt;h1&gt;&lt;?= e($page_title) ?&gt;&lt;/h1&gt;
+        &lt;/div&gt;
+        &lt;button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme"&gt;
+            &lt;?= icon('moon') ?&gt;
+        &lt;/button&gt;
+    &lt;/header&gt;
+
+    &lt;main class="content"&gt;
+        &lt;?php if ($flashSuccess): ?&gt;
+            &lt;div class="alert alert--success" role="status"&gt;&lt;?= icon('check') ?&gt; &lt;?= e($flashSuccess) ?&gt;&lt;/div&gt;
+        &lt;?php endif; ?&gt;
+        &lt;?php if ($flashError): ?&gt;
+            &lt;div class="alert alert--error" role="alert"&gt;&lt;?= icon('alert') ?&gt; &lt;?= e($flashError) ?&gt;&lt;/div&gt;
+        &lt;?php endif; ?&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>The <b>topbar</b>: a hamburger button (only visible on phones — CSS decides), the page title, and the moon/sun dark-mode button. Their <code class="inline-code">id="…"</code> attributes are the handles JavaScript grabs.</p><p>Then the <b>content area opens</b> — and here's the core idea of the whole frame: this file ends <i>mid-page</i>. The green/red flash messages print if they exist, and then… the file just stops. The actual page (dashboard etc.) fills in everything after this. The second half of the frame closes what this half opened.</p></div></div>
+  </div>
+
+  <div class="file" id="layout-bottom">
+    <div class="file-head"><span class="file-name">partials/layout-bottom.php</span><span class="file-tag">PHP · 11 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the bottom half of the frame — closes the tags that layout-top opened. Ten lines, but without them every page would be structurally broken.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP+HTML</span><span>whole file</span></div>
+<pre>    &lt;/main&gt;&lt;!-- /.content --&gt;
+
+    &lt;footer class="footer"&gt;
+        &lt;small&gt;&amp;copy; &lt;?= date('Y') ?&gt; &lt;?= e(APP_NAME) ?&gt; — Built for SIWES log book management.&lt;/small&gt;
+    &lt;/footer&gt;
+&lt;/div&gt;&lt;!-- /.main --&gt;
+
+&lt;script src="assets/js/app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>&lt;/main&gt;:</b> closes the content box that layout-top opened. <b>The footer:</b> the copyright line — <code class="inline-code">date('Y')</code> always prints the <i>current</i> year, so "© 2026" updates itself forever.</p><p><b>&lt;script src=…&gt;:</b> loads the muscles (app.js, Part 6) — placed last on purpose, so the page's pictures appear before the script runs. <b>&lt;/body&gt; &lt;/html&gt;:</b> the formal end of the page.</p><p>So a full page is: <code class="inline-code">page sets vars → layout-top → page's own HTML → layout-bottom</code>. Three slices, one complete page.</p></div></div>
+  </div>
+
+  <div class="tip"><b>Naming quirk decoded:</b> class names like <code class="inline-code">sidebar__brand</code> and <code class="inline-code">btn--primary</code> use a popular CSS convention called <b>BEM</b>: <i>block__part--variant</i>. It reads as "the brand part of the sidebar" and "the primary flavour of button". The double and single underscores aren't magic — just the agreed grammar.</div>
+</section>
+
+<!-- ============================ PART 3 ============================ -->
+<section class="part" id="login-php">
+  <div class="part-head">
+    <span class="num">3</span>
+    <div><h2>Doors in &amp; out</h2><p>Register, log in, log out — and the security ideas that make them trustworthy.</p></div>
+  </div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">login.php</span><span class="file-tag">PHP · 84 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the front door. Two halves: PHP logic at the top (runs first), then the HTML of the login card. Notice the file has <i>no</i> <code class="inline-code">&lt;?php ?&gt;</code> wrapper around the whole thing — PHP sprinkled through HTML is normal here.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 1–9</span></div>
+<pre>require_once __DIR__ . '/helpers.php';
+
+// Already logged in? Straight to the dashboard.
+if (is_logged_in()) {
+    redirect('dashboard.php');
+}
+
+$error = '';</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Load the toolbox. Then: <b>"if you're already logged in, why are you at the door? Go inside"</b> — instant redirect to the dashboard.</p><p><b>$error = '';</b> an empty box prepared for an error message. It stays empty unless the form below goes wrong; the HTML later checks "is there something in the box?" and only then shows the red alert.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 10–21</span></div>
+<pre>if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if ($email === '' || $password === '') {
+        $error = 'Please enter both email and password.';
+    } else {
+        $stmt = db()-&gt;prepare('SELECT * FROM students WHERE email = ?');
+        $stmt-&gt;execute([$email]);
+        $student = $stmt-&gt;fetch();</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Line 10:</b> "did the visitor <i>submit</i> the form, or just arrive to see it?" First visit = GET (just show the page). Submit = POST (the form sent data). The code only tries to log you in on POST.</p><p><b>csrf_verify():</b> the secret-handshake check from Part 2 — this exact line sits before <i>every</i> form handler in the app.</p><p><b>trim()</b> chops invisible spaces off the ends of typed text (so <code class="inline-code">" a@b.com "</code> still matches). <code class="inline-code">?? ''</code> = "if the field wasn't sent at all, use empty text instead of crashing."</p><p><b>The query:</b> "SELECT * FROM students WHERE email = ?" — "get the row whose email matches". The <code class="inline-code">?</code> is filled safely by <code class="inline-code">execute([$email])</code> — SQL injection impossible. <code class="inline-code">fetch()</code> grabs the one matching row, or nothing.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 23–30</span></div>
+<pre>        if ($student &amp;&amp; password_verify($password, $student['password_hash'])) {
+            session_regenerate_id(true);
+            $_SESSION['student_id'] = (int)$student['id'];
+            $_SESSION['student_name'] = $student['full_name'];
+            redirect('dashboard.php');
+        }
+        $error = 'Invalid email or password.';</pre></div>
+    <div class="note"><span class="lbl">The password check — the important part</span><p><b>Why we never compare passwords directly:</b> the database doesn't store your password. It stores a <dfn>hash</dfn> — a one-way scramble made when you registered. Given the scramble, you can't get the password back (even the admin can't). <code class="inline-code">password_verify()</code> scrambles what you just typed <i>the same way</i> and checks whether the two scrambles match. Same answer, way safer.</p><p><b>session_regenerate_id(true):</b> hands you a fresh locker key at the moment you log in. It defeats <dfn>session fixation</dfn> — a trick where an attacker pre-assigns you a key they already know. Cheap insurance, standard practice.</p><p><b>$_SESSION['student_id'] = …:</b> the actual "you are in" moment — the ID goes into the locker, and from now on every page's <code class="inline-code">is_logged_in()</code> returns true. The <code class="inline-code">(int)</code> forces it to be a number, not text.</p><p><b>The last line:</b> same vague message whether the email was wrong <i>or</i> the password — deliberately. A specific message ("no account with that email") would tell attackers which emails exist.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>HTML</span><span>lines 52–78</span></div>
+<pre>&lt;?php if ($error): ?&gt;
+    &lt;div class="alert alert--error" role="alert"&gt;...&lt;/div&gt;
+&lt;?php endif; ?&gt;
+&lt;?php if ($m = flash('success')): ?&gt;
+    &lt;div class="alert alert--success" role="status"&gt;...&lt;/div&gt;
+&lt;?php endif; ?&gt;
+
+&lt;form method="post" novalidate&gt;
+    &lt;?= csrf_field() ?&gt;
+    &lt;div class="field"&gt;
+        &lt;label for="email"&gt;Email address&lt;/label&gt;
+        &lt;input type="email" id="email" name="email" value="&lt;?= e($_POST['email'] ?? '') ?&gt;"...&gt;
+    &lt;/div&gt;
+    &lt;div class="field"&gt;
+        &lt;label for="password"&gt;Password&lt;/label&gt;
+        &lt;div class="input-group"&gt;
+            &lt;input type="password" id="password" name="password" ... required&gt;
+            &lt;button type="button" ... data-toggle-password="password"&gt;&lt;?= icon('eye') ?&gt;&lt;/button&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;button type="submit" class="btn btn--primary btn--block"&gt;Log in&lt;/button&gt;
+&lt;/form&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The alerts:</b> pure PHP conditions inside HTML — "if there's an error, print the red box; if there's a pending success message (e.g. 'Account created' from register.php), print the green one."</p><p><b>The form:</b> <code class="inline-code">method="post"</code> sends values invisibly (GET would paste them into the URL — terrible for passwords). <code class="inline-code">csrf_field()</code> injects the hidden secret ticket. <code class="inline-code">novalidate</code> says "browser, don't pre-block; let my PHP show friendlier errors".</p><p><b>value="&lt;?= e($_POST['email'] ?? '') ?&gt;"</b> is a kindness: if the login fails, your email is still filled in so you fix only the password. And it's escaped with <code class="inline-code">e()</code> so the kindness can't be exploited.</p><p><b>The eye button:</b> <code class="inline-code">type="button"</code> = "does nothing on click by itself; JavaScript owns it" (Part 6). <code class="inline-code">data-toggle-password="password"</code> is a hand-written label naming which input to flip.</p></div></div>
+
+    <div class="tip"><b>One second of theory — GET vs POST:</b> GET is "just show me a page" (things ride in the URL, can be bookmarked). POST is "here is data, do something with it" (things ride hidden, not bookmarked). Rule used everywhere in this app: reading uses GET links, changing things uses POST forms.</div>
+  </div>
+
+  <div class="file" id="register-php">
+    <div class="file-head"><span class="file-name">register.php</span><span class="file-tag">PHP · 138 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the bigger sibling of login.php — seven fields instead of two, and a longer checklist of things to verify before a new row is allowed into <code class="inline-code">students</code>. Same rhythm though: logic on top, HTML below.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 8–20</span></div>
+<pre>$errors = [];
+$old    = fn(string $k) =&gt; e($_POST[$k] ?? '');
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+
+    $matric      = strtoupper(trim($_POST['matric_no'] ?? ''));
+    $fullName    = trim($_POST['full_name'] ?? '');
+    $email       = trim($_POST['email'] ?? '');
+    $password    = $_POST['password'] ?? '';
+    $confirm     = $_POST['password_confirm'] ?? '';
+    $institution = trim($_POST['institution'] ?? '');
+    $course      = trim($_POST['course_of_study'] ?? '');</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>$errors = []</b> — an empty list; every failed check will drop one message in here.</p><p><b>$old = fn…</b> — a one-line mini-function ("arrow function"): <i>"remember what I typed in field $k, safely escaped"</i>. It exists so that after a failed submit, the HTML can refill every field — you fix one mistake instead of retyping everything.</p><p><b>The seven lines:</b> pull each field out of <code class="inline-code">$_POST</code>, trim spaces, and — for the matric number — <code class="inline-code">strtoupper()</code> capitalise it, so <code class="inline-code">csc/2021/0123</code> and <code class="inline-code">CSC/2021/0123</code> are the same student.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 22–36</span></div>
+<pre>    if ($matric === '')                              $errors['matric_no'] = 'Matric number is required.';
+    if ($fullName === '')                            $errors['full_name'] = 'Full name is required.';
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL))  $errors['email']     = 'Enter a valid email address.';
+    if (strlen($password) &lt; 8)                       $errors['password']  = 'Password must be at least 8 characters.';
+    if ($password !== $confirm)                      $errors['password_confirm'] = 'Passwords do not match.';
+
+    // Unique email / matric check
+    if (!$errors) {
+        $stmt = db()-&gt;prepare('SELECT email, matric_no FROM students WHERE email = ? OR matric_no = ?');
+        $stmt-&gt;execute([$email, $matric]);
+        while ($row = $stmt-&gt;fetch()) {
+            if (strcasecmp($row['email'], $email) === 0)      $errors['email']     = 'This email is already registered.';
+            if (strcasecmp($row['matric_no'], $matric) === 0) $errors['matric_no'] = 'This matric number is already registered.';
+        }
+    }</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The checklist:</b> five <code class="inline-code">if</code>s, each checking one rule and leaving a message under the guilty field's name if it fails. <code class="inline-code">filter_var(…, FILTER_VALIDATE_EMAIL)</code> is PHP's built-in "is this shaped like an email?" tester. Note the errors are stored <i>by field name</i> — that's how the HTML knows where to print each message.</p><p><b>Only if no errors so far:</b> ask the database "is anyone already using this email or matric number?" and walk the answers with <code class="inline-code">while</code> (there could be up to two reasons). <code class="inline-code">strcasecmp()</code> compares two pieces of text ignoring capitalisation.</p><p>Why check in PHP when the database has UNIQUE rules? Because "email already taken" as a friendly red message beats a scary database error page. The database rule stays as the last line of defence.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 38–48</span></div>
+<pre>    if (!$errors) {
+        $stmt = db()-&gt;prepare(
+            'INSERT INTO students (matric_no, full_name, email, password_hash, institution, course_of_study)
+             VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt-&gt;execute([$matric, $fullName, $email, password_hash($password, PASSWORD_DEFAULT), $institution, $course]);
+
+        flash('success', 'Account created — you can now log in.');
+        redirect('login.php');
+    }</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Only if everything passed:</b> the INSERT — six <code class="inline-code">?</code> slots, six values. Watch the fourth one: <code class="inline-code">password_hash($password, PASSWORD_DEFAULT)</code> does the one-way scrambling <i>at the last moment</i>. The plain password exists in memory for a fraction of a second, then only the hash goes to the database.</p><p><b>The handshake finish:</b> leave a success message for the login page, then send the person there. This pattern — <i>do the work, leave a message, redirect</i> — is used by every page in the app. (It also prevents the "refresh resubmits the form" annoyance.)</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>HTML</span><span>lines 69–86 excerpt</span></div>
+<pre>&lt;?php if ($errors): ?&gt;
+    &lt;div class="alert alert--error" role="alert"&gt;...Please fix the highlighted fields&lt;/div&gt;
+&lt;?php endif; ?&gt;
+
+&lt;form method="post" novalidate&gt;
+    &lt;?= csrf_field() ?&gt;
+    &lt;div class="form-grid"&gt;
+        &lt;div class="field"&gt;
+            &lt;label for="matric_no"&gt;Matric number &lt;span class="req"&gt;*&lt;/span&gt;&lt;/label&gt;
+            &lt;input type="text" id="matric_no" name="matric_no" value="&lt;?= $old('matric_no') ?&gt;"&gt;
+            &lt;?php if (isset($errors['matric_no'])): ?&gt;
+                &lt;p class="field-error"&gt;&lt;?= e($errors['matric_no']) ?&gt;&lt;/p&gt;
+            &lt;?php endif; ?&gt;
+        &lt;/div&gt;
+        ...six more fields, same pattern...
+    &lt;/div&gt;
+    &lt;button type="submit" class="btn btn--primary btn--block"&gt;Create account&lt;/button&gt;
+&lt;/form&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Each field is a self-contained unit: label → input → optional red message underneath, printed only when <code class="inline-code">$errors['that_field']</code> exists. The <code class="inline-code">value="…"</code> on each input is the <code class="inline-code">$old()</code> helper refilling what you typed.</p><p>Seven near-identical blocks is why programmers love loops and templates — but for a one-off form, writing them out is honest and clear.</p></div></div>
+  </div>
+
+  <div class="file" id="logout-php">
+    <div class="file-head"><span class="file-name">logout.php</span><span class="file-tag">PHP · 7 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the exit door — the shortest page in the project, and a perfect last one for this part.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>whole file</span></div>
+<pre>&lt;?php
+require_once __DIR__ . '/helpers.php';
+
+$_SESSION = [];
+session_destroy();
+redirect('login.php');</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>$_SESSION = []</b> empties your locker (out goes your ID, your CSRF ticket, everything). <b>session_destroy()</b> tells the server to demolish the locker itself. <b>redirect()</b> walks you back to the front door. No HTML at all — this page is pure action: arrive, get logged out, get moved on.</p></div></div>
+  </div>
+</section>
+
+<!-- ============================ PART 4 ============================ -->
+<section class="part" id="dashboard-php">
+  <div class="part-head">
+    <span class="num">4</span>
+    <div><h2>The working pages</h2><p>Where the actual log-book life happens: the dashboard, the list, the form, the delete page, and the profile. All built for <b>daily</b> entries.</p></div>
+  </div>
+
+  <div class="tip"><b>The model in one sentence:</b> one row per <i>day</i> worked — date, hours, what you did. The database's <code class="inline-code">uq_student_day</code> rule (Part 1) guarantees a student can log any given day only once.</div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">dashboard.php</span><span class="file-tag">PHP · 175 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the home screen you land on after logging in. Its job is summarising: four stat cards, a bar chart, a placement panel, and the five most recent entries — all computed fresh from the database on every visit.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 1–20</span></div>
+<pre>require_once __DIR__ . '/helpers.php';
+require_login();
+
+$student = current_student();
+
+$stmt = db()-&gt;prepare(
+    'SELECT COUNT(*)              AS entries,
+            COALESCE(SUM(hours_worked), 0) AS hours,
+            MIN(entry_date)          AS first_day,
+            MAX(entry_date)          AS last_day
+     FROM log_entries WHERE student_id = ?'
+);
+$stmt-&gt;execute([$student['id']]);
+$stats = $stmt-&gt;fetch();
+
+$entryCount  = (int)$stats['entries'];
+$totalHours  = (float)$stats['hours'];
+$avgHours    = $entryCount &gt; 0 ? $totalHours / $entryCount : 0.0;
+$weekCount   = 0;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>require_login()</b> — the bouncer from Part 2 runs before anything else. No session? You never even see this page's HTML.</p><p><b>One clever query, four answers.</b> SQL can do <i>maths on columns</i> all by itself: <code class="inline-code">COUNT(*)</code> = "how many rows", <code class="inline-code">SUM(hours_worked)</code> = "add up that whole column", <code class="inline-code">MIN/MAX</code> = "earliest / latest day". Asking MySQL to do the maths once is far faster than pulling every row into PHP and counting there. Each result gets a nickname (<code class="inline-code">AS entries</code>) so PHP can grab it as <code class="inline-code">$stats['entries']</code>.</p><p><b>COALESCE(x, 0)</b> means "if the sum comes back as nothing (no rows yet), say 0 instead" — no maths on empty air.</p><p><b>$avgHours</b> is total hours ÷ days logged — and the <code class="inline-code">$entryCount &gt; 0 ? … : 0.0</code> guard protects a brand-new student from dividing by zero. <b>(int)</b> and <b>(float)</b> are <i>casting</i>: MySQL hands values back as text-shaped things; these force them into real numbers so maths on them is safe.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 22–42</span></div>
+<pre>if ($stats['first_day'] &amp;&amp; $stats['last_day']) {
+    $weekCount = (int)floor((strtotime((string)$stats['last_day']) - strtotime((string)$stats['first_day'])) / 604800) + 1;
+}
+
+$stmt = db()-&gt;prepare(
+    'SELECT entry_date, hours_worked FROM log_entries
+     WHERE student_id = ? ORDER BY entry_date DESC LIMIT 10'
+);
+$stmt-&gt;execute([$student['id']]);
+$chartRows = array_reverse($stmt-&gt;fetchAll());
+
+$chartLabels = array_map(fn($r) =&gt; date('d M', strtotime($r['entry_date'])), $chartRows);
+$chartData   = array_map(fn($r) =&gt; (float)$r['hours_worked'], $chartRows);
+
+$stmt = db()-&gt;prepare(
+    'SELECT * FROM log_entries WHERE student_id = ? ORDER BY entry_date DESC LIMIT 5'
+);
+$stmt-&gt;execute([$student['id']]);
+$recent = $stmt-&gt;fetchAll();</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Week span:</b> seconds between the first and last logged day, ÷ 604800 (seconds per week), rounded down (<code class="inline-code">floor</code>), plus 1. First day 6 Jul, last day 20 Jul? That's a 3-week span even if some days were skipped — it measures the window your placement covers, which is what supervisors want. Only computed once you have at least one entry.</p><p><b>Chart query:</b> newest 10 rows (<code class="inline-code">ORDER BY … DESC LIMIT 10</code>) — then <code class="inline-code">array_reverse()</code> flips them, because a chart should read oldest-on-the-left. <code class="inline-code">fetchAll()</code> = every matching row, not just one.</p><p><b>array_map(fn…)</b> is "run this mini-function on <i>every</i> item and give me the new list" — one line turns 10 rows into 10 date labels ("06 Jul"), another into 10 numbers.</p><p><b>Recent query:</b> the newest 5 entries for the table at the bottom. Three queries, three neat boxes of data — that's the whole "thinking" part of the page done before any HTML prints.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 44–57</span></div>
+<pre>$page_title = 'Dashboard';
+$active     = 'dashboard';
+require __DIR__ . '/partials/layout-top.php';
+?&gt;
+
+&lt;section class="page-head"&gt;
+    &lt;div&gt;
+        &lt;h2&gt;Hello, &lt;?= e(explode(' ', trim((string)$student['full_name']))[0]) ?&gt;&lt;/h2&gt;
+        &lt;p class="muted"&gt;Here's how your SIWES log book is coming along.&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;a class="btn btn--primary" href="log_form.php"&gt;
+        &lt;?= icon('plus') ?&gt;&lt;span&gt;New daily entry&lt;/span&gt;
+    &lt;/a&gt;
+&lt;/section&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The frame ritual:</b> set the title, mark the active sidebar item, pull in layout-top. From here on it's pure HTML.</p><p><b>The first-name trick:</b> <code class="inline-code">explode(' ', $name)</code> chops "Ada Obi" at every space into <code class="inline-code">["Ada", "Obi"]</code>, and <code class="inline-code">[0]</code> takes the first piece — "Hello, Ada" instead of the full name.</p><p><b>The big button:</b> just a link dressed as a button, pointing at the form page (next in this part).</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP+HTML</span><span>lines 59–88</span></div>
+<pre>&lt;section class="stats-grid"&gt;
+    &lt;article class="stat-card stat-card--cyan"&gt;
+        &lt;span class="stat-icon"&gt;&lt;?= icon('book') ?&gt;&lt;/span&gt;
+        &lt;div&gt;
+            &lt;span class="stat-value"&gt;&lt;?= $entryCount ?&gt;&lt;/span&gt;
+            &lt;span class="stat-label"&gt;Day&lt;?= $entryCount === 1 ? '' : 's' ?&gt; logged&lt;/span&gt;
+        &lt;/div&gt;
+    &lt;/article&gt;
+    &lt;article class="stat-card stat-card--green"&gt;
+        ... &lt;?= number_format($totalHours, 1) ?&gt; ... Total hours ...
+    &lt;/article&gt;
+    &lt;article class="stat-card stat-card--amber"&gt;
+        ... &lt;?= number_format($avgHours, 1) ?&gt; ... Avg hours / day ...
+    &lt;/article&gt;
+    &lt;article class="stat-card stat-card--violet"&gt;
+        ... &lt;?= $weekCount ?&gt; ... Week span ...
+    &lt;/article&gt;
+&lt;/section&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Four cards, four colours — the only difference between them is the <code class="inline-code">--cyan/--green/--amber/--violet</code> class, which CSS turns into a different icon-tile colour. The cards now read <b>Days logged · Total hours · Avg hours/day · Week span</b>.</p><p><b>The plural trick:</b> <code class="inline-code">$entryCount === 1 ? '' : 's'</code> prints "Day logged" or "Days logged" correctly. Small touch, professional feel.</p><p><b>number_format($totalHours, 1)</b> prints the hours with exactly one decimal and thousands separators: <code class="inline-code">200.0</code> instead of raw <code class="inline-code">200</code> or <code class="inline-code">200.04999</code>. Same treatment for the average.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP+HTML</span><span>lines 90–116</span></div>
+<pre>&lt;?php if ($chartData): ?&gt;
+    &lt;div class="chart" role="img" aria-label="Bar chart of hours worked per day: ..."&gt;
+        &lt;?php
+        $max = max($chartData) ?: 1;
+        foreach ($chartData as $i =&gt; $val):
+            $pct = round($val / $max * 100);
+        ?&gt;
+        &lt;div class="chart__col" title="&lt;?= e($chartLabels[$i]) ?&gt; — &lt;?= (float)$val ?&gt; hours"&gt;
+            &lt;span class="chart__val"&gt;&lt;?= (float)$val ?&gt;&lt;/span&gt;
+            &lt;div class="chart__track"&gt;&lt;div class="chart__bar" style="--h: &lt;?= $pct ?&gt;%"&gt;&lt;/div&gt;&lt;/div&gt;
+            &lt;span class="chart__label"&gt;&lt;?= e($chartLabels[$i]) ?&gt;&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;?php endforeach; ?&gt;
+    &lt;/div&gt;
+&lt;?php else: ?&gt;
+    &lt;div class="empty empty--sm"&gt;No data yet — log your first day to see the chart.&lt;/div&gt;
+&lt;?php endif; ?&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>A chart with no chart library</b> — now one bar per <i>day</i>, last ten days. The maths is tiny: find the biggest day (<code class="inline-code">max()</code>; the <code class="inline-code">?: 1</code> avoids dividing by zero when everything is 0), then each bar's height = its hours ÷ biggest × 100, as a percent.</p><p><b>style="--h: 73%"</b> hands that percent to CSS through a <dfn>custom property</dfn> — a variable CSS can read (you'll meet <code class="inline-code">height: var(--h)</code> in Part 7). PHP computes the number; CSS does the drawing.</p><p><b>role="img" + aria-label:</b> the whole chart is announced to screen readers as one described image, with every day's value read out — accessibility built in, not bolted on.</p><p><b>The else branch:</b> a friendly empty box for new users instead of a sad blank rectangle.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP+HTML</span><span>lines 135–172 excerpt</span></div>
+<pre>&lt;?php foreach ($recent as $row): ?&gt;
+    &lt;tr&gt;
+        &lt;td&gt;
+            &lt;strong&gt;&lt;?= e(day_label($row['entry_date'])) ?&gt;&lt;/strong&gt;
+            &lt;small class="muted block"&gt;Week &lt;?= siwes_week_number($student, $row['entry_date']) ?&gt;&lt;/small&gt;
+        &lt;/td&gt;
+        &lt;td&gt;&lt;?= (float)$row['hours_worked'] ?&gt;&lt;/td&gt;
+        &lt;td class="td-truncate"&gt;&lt;?= e(mb_strimwidth($row['work_done'], 0, 90, '…')) ?&gt;&lt;/td&gt;
+        &lt;td class="td-actions"&gt;
+            &lt;a class="icon-btn" href="log_form.php?id=&lt;?= (int)$row['id'] ?&gt;"&gt;&lt;?= icon('edit') ?&gt;&lt;/a&gt;
+            &lt;a class="icon-btn icon-btn--danger" href="log_delete.php?id=&lt;?= (int)$row['id'] ?&gt;"&gt;&lt;?= icon('trash') ?&gt;&lt;/a&gt;
+        &lt;/td&gt;
+    &lt;/tr&gt;
+&lt;?php endforeach; ?&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The table is a loop.</b> Five rows of data → the <code class="inline-code">foreach</code> stamps out five <code class="inline-code">&lt;tr&gt;</code> rows using the exact same template. This is the single most common pattern in web programming: <i>data in, HTML stamped out</i>.</p><p><b>Per row:</b> <code class="inline-code">day_label()</code> makes "Mon 06 Jul 2026", and <code class="inline-code">siwes_week_number()</code> adds the little "Week 1" beneath it — so a daily book still reads in placement-weeks for the supervisor. <code class="inline-code">mb_strimwidth(…, 90, '…')</code> shortens long text to 90 characters, so a 400-word day fits one cell.</p><p><b>The edit/delete links carry the row's ID in the URL</b> (<code class="inline-code">?id=5</code>). That's the GET convention from Part 3: "show me the form for entry 5" / "show me the delete page for entry 5". Both destination pages verify the ID belongs to <i>you</i> before doing anything.</p><p>Below the loop: the same "empty log book" friendly box with a big call-to-action button.</p></div></div>
+  </div>
+
+  <div class="file" id="logs-php">
+    <div class="file-head"><span class="file-name">logs.php</span><span class="file-tag">PHP · 89 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the complete log book — every day you've logged, newest first, with a working search box. This is the <b>R</b> (Read) of CRUD.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 5–21</span></div>
+<pre>$student = current_student();
+$q       = trim($_GET['q'] ?? '');
+
+if ($q !== '') {
+    $stmt = db()-&gt;prepare(
+        'SELECT * FROM log_entries
+         WHERE student_id = ? AND (work_done LIKE ? OR challenges LIKE ? OR entry_date LIKE ?)
+         ORDER BY entry_date DESC'
+    );
+    $like = '%' . $q . '%';
+    $stmt-&gt;execute([$student['id'], $like, $like, $like . '%']);
+} else {
+    $stmt = db()-&gt;prepare(
+        'SELECT * FROM log_entries WHERE student_id = ? ORDER BY entry_date DESC'
+    );
+    $stmt-&gt;execute([$student['id']]);
+}
+$entries = $stmt-&gt;fetchAll();</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>$_GET['q']:</b> the search word arrives in the URL (<code class="inline-code">logs.php?q=react</code>) — that's why search results can be bookmarked and refreshed.</p><p><b>LIKE</b> is SQL's "contains": <code class="inline-code">%react%</code> matches any text with "react" anywhere in it. The search checks your work descriptions, your challenges, <i>and</i> the start of the date (so "2026-09" finds September days). Three columns, one word. Still via <code class="inline-code">?</code> slots, so even the search word can't be turned into an injection.</p><p><b>The two branches</b> exist only because searching with an empty box would be silly — no word? Just show everything.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP+HTML</span><span>lines 38–44, 49–62</span></div>
+<pre>&lt;form class="search" method="get" role="search"&gt;
+    &lt;input type="search" name="q" value="&lt;?= e($q) ?&gt;" placeholder="Search work done…"&gt;
+    &lt;button class="btn btn--ghost btn--sm" type="submit"&gt;Search&lt;/button&gt;
+    &lt;?php if ($q !== ''): ?&gt;&lt;a class="link" href="logs.php"&gt;Clear&lt;/a&gt;&lt;?php endif; ?&gt;
+&lt;/form&gt;
+
+&lt;h3&gt;&lt;?= icon('book') ?&gt; &lt;?= count($entries) ?&gt; entr&lt;?= count($entries) === 1 ? 'y' : 'ies' ?&gt;&lt;/h3&gt;
+
+&lt;?php foreach ($entries as $row): ?&gt;
+    &lt;tr&gt;
+        &lt;td&gt;
+            &lt;strong&gt;&lt;?= e(day_label($row['entry_date'])) ?&gt;&lt;/strong&gt;
+            &lt;small class="muted block"&gt;Week &lt;?= siwes_week_number($student, $row['entry_date']) ?&gt;&lt;/small&gt;
+        &lt;/td&gt;
+        &lt;td&gt;&lt;?= (float)$row['hours_worked'] ?&gt;&lt;/td&gt;
+        &lt;td class="td-truncate"&gt;...work done, 110 chars...&lt;/td&gt;
+        &lt;td class="td-truncate"&gt;...challenges, or an em-dash...&lt;/td&gt;
+        &lt;td class="td-actions"&gt;...edit + delete links...&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;?php endforeach; ?&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>method="get"</b> on purpose — the search word <i>should</i> be in the URL (it's not secret, and it makes results shareable).</p><p><b>count($entries)</b> = how many rows came back, and the same singular/plural trick as the dashboard ("1 entry", "25 entries"). The table lists the <b>Date</b> (with its week-number), <b>Hours</b>, <b>Work done</b>, <b>Challenges</b>, and the two action links. Challenges prints "—" when empty, so the column never looks broken.</p><p>The <b>Clear link</b> only appears while a search is active, and the empty state has two flavours: "no matches for your search" vs "nothing logged yet". Same box, different message.</p></div></div>
+  </div>
+
+  <div class="file" id="log-form">
+    <div class="file-head"><span class="file-name">log_form.php</span><span class="file-tag">PHP · 134 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the do-everything form — it <b>creates</b> a new entry <i>and</i> <b>updates</b> an existing one, decided by a single question: does the URL contain <code class="inline-code">?id=…</code>? This "one form, two jobs" pattern is a classic, and the README calls it out for your demo.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 7–26</span></div>
+<pre>$id     = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$entry  = null;
+
+if ($id &gt; 0) {
+    $stmt = db()-&gt;prepare('SELECT * FROM log_entries WHERE id = ? AND student_id = ?');
+    $stmt-&gt;execute([$id, $student['id']]);
+    $entry = $stmt-&gt;fetch();
+    if (!$entry) {
+        flash('error', 'Entry not found.');
+        redirect('logs.php');
+    }
+}
+
+$errors = [];
+
+$entryDate   = $entry['entry_date']   ?? date('Y-m-d');
+$hoursWorked = $entry['hours_worked'] ?? 8.0;
+$workDone    = $entry['work_done']    ?? '';
+$challenges  = $entry['challenges']   ?? '';
+$remarks     = $entry['remarks']      ?? '';</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Line 8 is the fork in the road:</b> an ID in the URL → "we're editing entry #5"; no ID → "we're creating fresh" ($id stays 0, $entry stays null).</p><p><b>… AND student_id = ?</b> — look closely. It doesn't just check the entry exists; it checks it exists <b>and belongs to you</b>. Try editing someone else's entry by typing a random ID into the URL? You get "Entry not found" — to you it doesn't exist. This one clause is the app's whole ownership security.</p><p><b>The defaults block:</b> the elegant <code class="inline-code">??</code> chain — "use the saved value if we're editing; otherwise use a sensible default". New entries pre-fill <b>today's date</b> and <b>8.0 hours</b> — exactly what a normal working day looks like, so most logs need two keystrokes and one sentence.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 28–44</span></div>
+<pre>if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+
+    $entryDate   = trim($_POST['entry_date'] ?? '');
+    $hoursWorked = (float)($_POST['hours_worked'] ?? 0);
+    $workDone    = trim($_POST['work_done'] ?? '');
+    $challenges  = trim($_POST['challenges'] ?? '');
+    $remarks     = trim($_POST['remarks'] ?? '');
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $entryDate) || !strtotime($entryDate)) {
+        $errors['entry_date'] = 'Pick a valid date.';
+    }
+    if ($hoursWorked &lt; 0.5 || $hoursWorked &gt; 24)  $errors['hours_worked'] = 'Hours must be between 0.5 and 24.';
+    if ($workDone === '')                         $errors['work_done']    = 'Describe what you did this day.';</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Read + re-validate everything.</b> Even though the form "looks" fine in the browser, the server re-checks every rule — because anything arriving from a browser can be faked. The browser's rules are a convenience; the server's rules are the law.</p><p><b>preg_match('/^\d{4}-\d{2}-\d{2}$/')</b> is a <dfn>regex</dfn> — pattern-matching for text. Reading it: <code class="inline-code">^</code> starts here, 4 digits, dash, 2 digits, dash, 2 digits, <code class="inline-code">$</code> ends here. i.e. "is it shaped exactly like 2026-09-14?"</p><p><b>The hour rule:</b> at least half an hour, at most 24 — a day can't contain more hours than exist. (In the weekly era the cap was 168; per-day, 24 is the honest ceiling.)</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 46–75</span></div>
+<pre>    // One entry per day per student (friendly check before hitting the UNIQUE key)
+    if (!$errors) {
+        $stmt = db()-&gt;prepare(
+            'SELECT id FROM log_entries WHERE student_id = ? AND entry_date = ? AND id &lt;&gt; ?'
+        );
+        $stmt-&gt;execute([$student['id'], $entryDate, $id]);
+        if ($stmt-&gt;fetch()) {
+            $errors['entry_date'] = 'You already logged this day — edit that entry instead.';
+        }
+    }
+
+    if (!$errors) {
+        if ($id &gt; 0) {
+            $stmt = db()-&gt;prepare(
+                'UPDATE log_entries
+                 SET entry_date = ?, hours_worked = ?, work_done = ?, challenges = ?, remarks = ?
+                 WHERE id = ? AND student_id = ?'
+            );
+            $stmt-&gt;execute([$entryDate, $hoursWorked, $workDone, $challenges, $remarks, $id, $student['id']]);
+            flash('success', 'Entry updated.');
+        } else {
+            $stmt = db()-&gt;prepare(
+                'INSERT INTO log_entries (student_id, entry_date, hours_worked, work_done, challenges, remarks)
+                 VALUES (?, ?, ?, ?, ?, ?)'
+            );
+            $stmt-&gt;execute([$student['id'], $entryDate, $hoursWorked, $workDone, $challenges, $remarks]);
+            flash('success', 'Day logged — nice progress!');
+        }
+        redirect('logs.php');
+    }</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The friendly duplicate check:</b> "does an entry for this date already exist — ignoring the one I'm editing (<code class="inline-code">id &lt;&gt; ?</code>)?" Caught here, you get a kind message pointing at the existing entry. The database's <code class="inline-code">uq_student_day</code> rule (Part 1) would also stop it, but its error is ugly. Two layers: kindness in PHP, certainty in SQL.</p><p><b>The fork pays off:</b> one <code class="inline-code">if ($id &gt; 0)</code> — editing runs <b>UPDATE … WHERE id = ? AND student_id = ?</b> (ownership checked again, on every write), creating runs <b>INSERT</b>. Both leave a flash message and land you back on the log book. One file, whole C and U of CRUD.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>HTML</span><span>lines 77–131 excerpt</span></div>
+<pre>&lt;h2&gt;&lt;?= $id &gt; 0 ? 'Edit daily entry' : 'Log a day of work' ?&gt;&lt;/h2&gt;
+
+&lt;form method="post" novalidate&gt;
+    &lt;?= csrf_field() ?&gt;
+    &lt;div class="form-grid"&gt;
+        &lt;div class="field"&gt;
+            &lt;label for="entry_date"&gt;Date worked &lt;span class="req"&gt;*&lt;/span&gt;&lt;/label&gt;
+            &lt;input type="date" id="entry_date" name="entry_date" value="&lt;?= e($entryDate) ?&gt;" required&gt;
+        &lt;/div&gt;
+        &lt;div class="field"&gt;
+            &lt;label for="hours_worked"&gt;Hours worked &lt;span class="req"&gt;*&lt;/span&gt;&lt;/label&gt;
+            &lt;input type="number" id="hours_worked" name="hours_worked" min="0.5" max="24" step="0.5"
+                   value="&lt;?= e((string)$hoursWorked) ?&gt;" required&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;textarea id="work_done" name="work_done" rows="6" required&gt;&lt;?= e($workDone) ?&gt;&lt;/textarea&gt;
+    &lt;textarea id="challenges" name="challenges" rows="3"&gt;&lt;?= e($challenges) ?&gt;&lt;/textarea&gt;
+    &lt;textarea id="remarks" name="remarks" rows="2"&gt;&lt;?= e($remarks) ?&gt;&lt;/textarea&gt;
+
+    &lt;button type="submit" class="btn btn--primary"&gt;
+        &lt;span&gt;&lt;?= $id &gt; 0 ? 'Save changes' : 'Log this day' ?&gt;&lt;/span&gt;
+    &lt;/button&gt;
+&lt;/form&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Everything adapts to the mode.</b> The heading and the button flip between "Log a day of work / Log this day" and "Edit daily entry / Save changes". One template, two personalities.</p><p><b>&lt;input type="date"&gt;</b> gives you a native calendar picker; <b>value="&lt;?= e($entryDate) ?&gt;</b> pre-fills it — saved date when editing, today when new. <b>&lt;input type="number" step="0.5"&gt;</b> gives a spinner in half-hour steps, capped at 24 by the min/max attributes as the first line of defence (the server re-checks anyway). <b>textarea</b> = the multi-line box for the day's description.</p><p>The challenges and remarks boxes are marked <i>optional</i> in their labels — remarks explicitly "reserved for your supervisor", which explains why it's rarely filled. Note there's <i>no</i> hidden <code class="inline-code">id</code> input — the ID travels in the <i>URL</i> (<code class="inline-code">log_form.php?id=5</code>).</p></div></div>
+  </div>
+
+  <div class="file" id="log-delete">
+    <div class="file-head"><span class="file-name">log_delete.php</span><span class="file-tag">PHP · 53 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the "are you sure?" page. Deleting is irreversible, so instead of a bare link that deletes instantly, clicking the bin opens this review page, and the actual DELETE only happens when you press the red button. That's the <b>D</b> of CRUD, done politely.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 5–24</span></div>
+<pre>$id = (int)($_GET['id'] ?? 0);
+
+$stmt = db()-&gt;prepare('SELECT * FROM log_entries WHERE id = ? AND student_id = ?');
+$stmt-&gt;execute([$id, $student['id']]);
+$entry = $stmt-&gt;fetch();
+
+if (!$entry) {
+    flash('error', 'Entry not found.');
+    redirect('logs.php');
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+    $stmt = db()-&gt;prepare('DELETE FROM log_entries WHERE id = ? AND student_id = ?');
+    $stmt-&gt;execute([$id, $student['id']]);
+    flash('success', 'Entry deleted.');
+    redirect('logs.php');
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The two-step rhythm:</b> arriving with GET (just clicked the bin) → the entry is fetched and <i>shown</i>, nothing deleted. Submitting with POST (pressed "Yes, delete it") → the actual DELETE runs. The page is both the confirmation screen <i>and</i> the delete button's target.</p><p><b>Ownership, third time:</b> "id = ? AND student_id = ?" again — on the read <i>and</i> on the delete. Even if you crafted a request by hand, the database only ever touches your own rows.</p><p><b>DELETE FROM … WHERE id = ?</b> is the whole operation — SQL deletes are refreshingly blunt.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>HTML</span><span>lines 37–50</span></div>
+<pre>&lt;div class="delete-preview"&gt;
+    &lt;h3&gt;&lt;?= e(day_label($entry['entry_date'])) ?&gt;&lt;/h3&gt;
+    &lt;p class="muted"&gt;Week &lt;?= siwes_week_number($student, $entry['entry_date']) ?&gt;
+         · &lt;?= (float)$entry['hours_worked'] ?&gt; hours&lt;/p&gt;
+    &lt;blockquote class="quote"&gt;&lt;?= nl2br(e(mb_strimwidth($entry['work_done'], 0, 300, '…'))) ?&gt;&lt;/blockquote&gt;
+&lt;/div&gt;
+
+&lt;form method="post" class="form-actions"&gt;
+    &lt;?= csrf_field() ?&gt;
+    &lt;button type="submit" class="btn btn--danger"&gt;&lt;span&gt;Yes, delete it&lt;/span&gt;&lt;/button&gt;
+    &lt;a class="btn btn--ghost" href="logs.php"&gt;Keep it&lt;/a&gt;
+&lt;/form&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Show what's about to die.</b> The date ("Fri 07 Aug 2026"), its week number and hours, and the first 300 characters of what you wrote — enough to recognise the entry, so "oops wrong one" is catchable before it's too late. <b>nl2br()</b> = "new-lines to &lt;br&gt;" — your paragraph breaks survive into the preview.</p><p><b>The buttons:</b> red "Yes, delete it" submits the POST; grey "Keep it" is just a link back. The <code class="inline-code">"This action can't be undone."</code> line up top sets expectations honestly.</p><p>Notice the form still carries the CSRF ticket — <i>every</i> state-changing action in this app does, even deleting one row.</p></div></div>
+  </div>
+
+  <div class="file" id="profile-php">
+    <div class="file-head"><span class="file-name">profile.php</span><span class="file-tag">PHP · 158 lines</span></div>
+    <p class="file-what"><b>What it is:</b> two independent forms on one page — "my details &amp; placement" and "change password". They solve a neat little problem: one page, two different jobs, told apart by a hidden <code class="inline-code">action</code> field. (It touches the <code class="inline-code">students</code> table, so the daily switch changed nothing here.)</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 8–52 excerpt</span></div>
+<pre>if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'details') {
+        ... trim the five fields, require full_name ...
+        $stmt = db()-&gt;prepare(
+            'UPDATE students SET full_name = ?, institution = ?, course_of_study = ?, placement_org = ?, industry_supervisor = ?
+             WHERE id = ?'
+        );
+        $stmt-&gt;execute([$fullName, $institution, $course, $org, $supervisor, $student['id']]);
+        flash('success', 'Profile updated.');
+        redirect('profile.php');
+    }
+
+    if ($action === 'password') {
+        if (!password_verify($current, $student['password_hash'])) {
+            $errors['current_password'] = 'Current password is incorrect.';
+        }
+        if (strlen($new) &lt; 8) { $errors['new_password'] = '...'; }
+        if ($new !== $confirm) { $errors['confirm_password'] = '...'; }
+        if (!$errors) {
+            $stmt = db()-&gt;prepare('UPDATE students SET password_hash = ? WHERE id = ?');
+            $stmt-&gt;execute([password_hash($new, PASSWORD_DEFAULT), $student['id']]);
+            flash('success', 'Password changed.');
+            redirect('profile.php');
+        }
+    }</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The router trick:</b> each form hides <code class="inline-code">&lt;input type="hidden" name="action" value="details"&gt;</code> (or <code class="inline-code">"password"</code>). When either submits, this code reads <code class="inline-code">$action</code> and runs only that form's logic. One page, two behaviours, no confusion.</p><p><b>The details UPDATE</b> changes five columns on <i>your</i> row (<code class="inline-code">WHERE id = ?</code> — and the ID comes from the session, not the form, so nobody can update someone else's profile). What's <i>missing</i> from the SET list is the point: matric no, email, and password can't be changed here.</p><p><b>The password gate:</b> you must prove the current password (<code class="inline-code">password_verify()</code> against the stored hash, exactly like login) before setting a new one — otherwise anyone at an unattended laptop could hijack the account. Then the same checklist as registration (8+ chars, both fields match), all errors collected before saving, then hash and store.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>HTML</span><span>lines 60–93 excerpt</span></div>
+<pre>&lt;span class="avatar avatar--lg"&gt;&lt;?= e(strtoupper(mb_substr($student['full_name'], 0, 1))) ?&gt;&lt;/span&gt;
+
+&lt;form method="post" novalidate&gt;
+    &lt;?= csrf_field() ?&gt;
+    &lt;input type="hidden" name="action" value="details"&gt;
+    ...
+    &lt;input type="text" id="matric_no_display" value="&lt;?= e($student['matric_no']) ?&gt;" disabled&gt;
+    ...
+    &lt;button type="submit" class="btn btn--primary"&gt;&lt;span&gt;Save details&lt;/span&gt;&lt;/button&gt;
+&lt;/form&gt;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The avatar</b> is the same first-letter trick from the sidebar, just bigger. <b>The disabled matric field:</b> shown for reference, greyed out and un-editable (<code class="inline-code">disabled</code>) — and because it has no <code class="inline-code">name</code>, it's never sent to the server at all. What you see is exactly what can't change. The password card repeats the pattern with its own hidden <code class="inline-code">action="password"</code> and three password inputs.</p></div></div>
+
+    <div class="tip"><b>CRUD — complete.</b> You've now seen all four letters as implemented here: <b>C</b>reate (log_form.php, no id), <b>R</b>ead (logs.php, dashboard.php), <b>U</b>pdate (log_form.php?id=N, profile.php), <b>D</b>elete (log_delete.php). Nearly every app you'll ever build is these four verbs wearing different clothes.</div>
+  </div>
+</section>
+
+<!-- ============================ PART 5 ============================ -->
+<section class="part" id="seed-php">
+  <div class="part-head">
+    <span class="num">5</span>
+    <div><h2>Helper scripts</h2><p>Two files that aren't part of the app itself — they set the stage. One fills the cabinet, one plays tour guide.</p></div>
+  </div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">seed.php</span><span class="file-tag">PHP · 94 lines</span></div>
+    <p class="file-what"><b>What it is:</b> a demo-data pump. Visit it once in your browser and it wipes the tables and fills them with a pretend student ("Ada Obi") plus <b>five weeks of daily entries</b> — 25 individual working days, Mon–Fri — so the dashboard has a chart and the tables have rows the first time you see the app. The file itself says: <b>delete it after use.</b></p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 11–16</span></div>
+<pre>try {
+    $pdo = db();
+
+    // Wipe demo data and re-create
+    $pdo-&gt;exec('DELETE FROM log_entries');
+    $pdo-&gt;exec('DELETE FROM students');</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>try { … }</b> opens a safety net: "attempt everything in here; if <i>anything</i> blows up (MySQL off, tables missing), jump to the catch at the bottom instead of dumping a scary raw error." The two DELETEs empty both tables so re-running always produces the same clean demo.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 18–32</span></div>
+<pre>$stmt = $pdo-&gt;prepare(
+    'INSERT INTO students (matric_no, full_name, email, password_hash, institution, course_of_study, placement_org, industry_supervisor)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+);
+$stmt-&gt;execute([
+    'CSC/2021/0123', 'Ada Obi', 'demo@siwes.test',
+    password_hash('demo1234', PASSWORD_DEFAULT),
+    'University of Nigeria, Nsukka', 'Computer Science',
+    'TechHub Solutions Ltd, Enugu', 'Mr. Chinedu Eze',
+]);
+$studentId = (int)$pdo-&gt;lastInsertId();</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>Creates the demo student the normal way — including hashing the demo password <code class="inline-code">demo1234</code> properly, so it behaves exactly like a real registration.</p><p><b>lastInsertId()</b> is the handy bit: MySQL knows which row number it just handed out; this asks "what ID did that INSERT get?" — needed next, because every log entry must point at this student.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 34–68</span></div>
+<pre>// Five weeks of working days (Mon-Fri). Each day has its own note.
+$weeks = [
+    [
+        ['2026-07-06', 8.0, "Set up the dev environment; cloned the company's inventory project and studied the codebase.", 'Getting used to the company workflow took a while.'],
+        ['2026-07-07', 8.5, "Attended onboarding sessions and met the team. Walked through the product roadmap with Mr. Eze."],
+        ['2026-07-08', 7.5, "Read through the existing database schema and sketched notes …"],
+        ...
+        ['2026-07-10', 6.0, "Pair-read the auth module with a senior dev …"],
+    ],
+    ... five weeks, five days each ...
+];</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>$weeks is now a list <i>of lists of days</i></b> — grouped by week purely so the writing reads like a real placement diary (week 1: onboarding, week 3: first PHP endpoints…), but every inner row is one <i>day</i>: date, hours, what was done, optional challenges. The prose is deliberately specific per day (a pull request approved on the second review, a 6.5-hour demo-rehearsal Friday) so the demo looks like genuine daily logging.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 73–79</span></div>
+<pre>$stmt = $pdo-&gt;prepare(
+    'INSERT INTO log_entries (student_id, entry_date, hours_worked, work_done, challenges)
+     VALUES (?, ?, ?, ?, ?)'
+);
+foreach ($weeks as $week) {
+    foreach ($week as $day) {
+        [$date, $hours, $work, $challenges] = array_pad($day, 4, null);
+        $stmt-&gt;execute([$studentId, $date, $hours, $work, $challenges]);
+    }
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>A loop inside a loop:</b> the outer one walks the five weeks, the inner one walks that week's five days — 25 inserts. The INSERT is prepared <i>once</i> and executed 25 times, the efficient pattern for repeating similar writes.</p><p><b>array_pad($day, 4, null)</b> is a small courtesy: some days were written without the challenges field, and this pads a missing fourth value with <code class="inline-code">null</code> so the unpacking never crashes.</p><p><b>The unpacking</b> <code class="inline-code">[$date, $hours, $work, $challenges]</code> is the same trick the sidebar nav uses: values in, named variables out.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 81–91</span></div>
+<pre>echo '&lt;!DOCTYPE html&gt;...';
+echo '&lt;h2&gt;✅ Demo data created&lt;/h2&gt;';
+echo '&lt;p&gt;Log in with:&lt;br&gt;&lt;strong&gt;demo@siwes.test&lt;/strong&gt; / &lt;strong&gt;demo1234&lt;/strong&gt;&lt;/p&gt;';
+...
+echo '&lt;p style="color:#b91c1c"&gt;&lt;small&gt;Now delete seed.php from the project folder.&lt;/small&gt;&lt;/p&gt;';
+} catch (Throwable $ex) {
+    http_response_code(500);
+    echo 'Seeding failed: ' . htmlspecialchars($ex-&gt;getMessage());
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>echo</b> prints directly — no template here, just a quick built-on-the-spot page with the login details and a reminder (in red!) to delete the file.</p><p><b>The catch:</b> if anything failed — MySQL not running, tables not imported — you get one calm sentence plus the technical reason, with an honest 500 "server error" status code, instead of PHP's raw crash output. <code class="inline-code">htmlspecialchars</code> is the same escape as <code class="inline-code">e()</code>, used before helpers were available here.</p></div></div>
+
+    <div class="tip amber"><b>Why delete it afterwards?</b> Anyone who visits seed.php later would wipe the <i>real</i> database and replace it with demo data. It's a loaded tool: useful during setup, dangerous to leave lying around. (The Python backend has no equivalent — it uses the same shared data.)</div>
+  </div>
+
+  <div class="file" id="router-php">
+    <div class="file-head"><span class="file-name">router.php</span><span class="file-tag">PHP · 34 lines</span></div>
+    <p class="file-what"><b>What it is:</b> a mini traffic-controller for PHP's built-in development server. When you run <code class="inline-code">php -S localhost:8000 router.php</code>, <i>every</i> request first passes through this file, which decides: serve the file directly? load a page? show 404? <b>You never need this file with XAMPP/Apache</b> — Apache does all this itself.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 8–16</span></div>
+<pre>require_once __DIR__ . '/helpers.php';
+
+$uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/');
+$file = __DIR__ . $uri;
+
+// 1. Serve existing files (css, js, images) directly
+if ($uri !== '/' &amp;&amp; file_exists($file) &amp;&amp; !is_dir($file)) {
+    return false;
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Line 10, right to left:</b> take the requested address (<code class="inline-code">/logs.php?q=x</code>), <code class="inline-code">parse_url</code> keeps just the path part (drops <code class="inline-code">?q=x</code>), <code class="inline-code">urldecode</code> converts web-speak back to normal (<code class="inline-code">%20</code> → space).</p><p><b>return false</b> is a magic incantation for the built-in server: "I'm not handling this — you serve the file yourself." That's how style.css and app.js get delivered without PHP touching them.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>PHP</span><span>lines 19–33</span></div>
+<pre>// 2. Root -&gt; dashboard for logged-in users, login otherwise
+if ($uri === '/' || $uri === '') {
+    require __DIR__ . (is_logged_in() ? '/dashboard.php' : '/login.php');
+    return true;
+}
+
+// 3. Pretty paths: /dashboard -&gt; dashboard.php
+$candidate = __DIR__ . rtrim($uri, '/') . '.php';
+if (file_exists($candidate)) {
+    require $candidate;
+    return true;
+}
+
+http_response_code(404);
+echo '&lt;h1&gt;404&lt;/h1&gt;&lt;p&gt;Page not found. &lt;a href="/"&gt;Go home&lt;/a&gt;&lt;/p&gt;';
+return true;</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Rule 2:</b> visiting the bare address routes like the app's front door — logged in? dashboard; not? login. (XAMPP does this with an <code class="inline-code">index.php</code>; here the router plays that role.)</p><p><b>Rule 3 — pretty URLs:</b> <code class="inline-code">/dashboard</code> becomes <code class="inline-code">dashboard.php</code> by gluing <code class="inline-code">.php</code> on the end; if that file exists, it's loaded. Lets you use tidy links without extensions.</p><p><b>Fallback:</b> nothing matched → an honest 404 status code plus a small page with a way home.</p></div></div>
+  </div>
+</section>
+
+<!-- ============================ PART 6 ============================ -->
+<section class="part" id="app-js">
+  <div class="part-head">
+    <span class="num">6</span>
+    <div><h2>assets/js/app.js</h2><p>The muscles: 72 lines of JavaScript that make the page react — theme, mobile menu, password eye.</p></div>
+  </div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">assets/js/app.js</span><span class="file-tag">JavaScript · 72 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the only JavaScript in the whole PHP app. It runs in the <i>browser</i>, after the page arrives, and wires up three behaviours. It's wrapped in <code class="inline-code">(function(){ 'use strict'; … })();</code> — a <dfn>IIFE</dfn> ("iffy"): code that runs immediately but keeps all its variables private, so it can't collide with anything else.</p>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>JS</span><span>lines 8–14</span></div>
+<pre>var d = document;
+
+/* ---- Dark / light theme ------------------------------------ */
+var root = d.documentElement;
+var toggle = d.getElementById('themeToggle');
+var stored = null;
+try { stored = localStorage.getItem('siwes-theme'); } catch (e) {}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>d = document</b> is just a short nickname for the page. <b>document.documentElement</b> is the <code class="inline-code">&lt;html&gt;</code> tag itself — the thing CSS watches for <code class="inline-code">data-theme</code>.</p><p><b>getElementById('themeToggle')</b> finds the moon button by the <code class="inline-code">id</code> attribute layout-top gave it. This is the fundamental JS move: <i>find the element, attach a behaviour</i>.</p><p><b>localStorage:</b> a tiny private notepad the browser keeps per-website, surviving even after the tab closes. The try/catch ("attempt this; if it's blocked, carry on") guards against browsers set to refuse storage — the page still works, just without a remembered theme.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>JS</span><span>lines 16–33</span></div>
+<pre>function applyTheme(theme, btn) {
+  root.setAttribute('data-theme', theme);
+  if (btn) btn.innerHTML = theme === 'dark'
+    ? '&lt;svg ...sun...&gt;'   // dark mode shows a sun (to switch to light)
+    : '&lt;svg ...moon...&gt;'; // light mode shows a moon (to switch to dark)
+}
+
+if (stored === 'dark' || stored === 'light') {
+  applyTheme(stored, toggle);
+}
+
+if (toggle) {
+  toggle.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(next, toggle);
+    try { localStorage.setItem('siwes-theme', next); } catch (e) {}
+  });
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>applyTheme()</b> does two things: stamp <code class="inline-code">data-theme="dark"</code> (or light) onto the <code class="inline-code">&lt;html&gt;</code> tag — which instantly re-skins the entire page, because all the CSS colours are defined against that attribute — and swap the button's icon to the <i>opposite</i> one (sun appears while dark, inviting you back).</p><p><b>The if before it:</b> on every page-load, "did this visitor choose a theme before?" — if so, apply it <i>immediately</i>, before they even see a flash of the wrong colours.</p><p><b>addEventListener('click', …):</b> "whenever this button is clicked, run this function." Inside: peek at the current theme, flip it, save the choice. Every dark-mode toggle on the web works in exactly this shape.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>JS</span><span>lines 35–56</span></div>
+<pre>var sidebar = d.getElementById('sidebar');
+var openBtn = d.getElementById('sidebarToggle');
+var backdrop = d.getElementById('sidebarBackdrop');
+
+function setSidebar(open) {
+  d.body.classList.toggle('sidebar-open', open);
+  if (openBtn) openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (backdrop) backdrop.hidden = !open;
+}
+
+if (openBtn &amp;&amp; sidebar) {
+  openBtn.addEventListener('click', function () {
+    setSidebar(!d.body.classList.contains('sidebar-open'));
+  });
+}
+if (backdrop) {
+  backdrop.addEventListener('click', function () { setSidebar(false); });
+}
+d.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape') setSidebar(false);
+});</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The mobile drawer:</b> the sidebar is styled (Part 7) to sit off-screen to the left on phones; <code class="inline-code">classList.toggle('sidebar-open', true/false)</code> adds or removes one class on the <code class="inline-code">&lt;body&gt;</code> — and CSS does the rest of the animation. JS flips switches; CSS moves furniture.</p><p><b>Three ways to close it:</b> click the hamburger again, click the dim backdrop, or press Escape. Little things like the <code class="inline-code">aria-expanded</code> update are what make it feel finished and screen-reader-friendly.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>JS</span><span>lines 58–71</span></div>
+<pre>d.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var input = d.getElementById(btn.getAttribute('data-toggle-password'));
+    if (!input) return;
+    var showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.innerHTML = showing ? '...eye svg...' : '...eye-off svg...';
+    btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  });
+});</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The eye:</b> <code class="inline-code">querySelectorAll('[data-toggle-password]')</code> finds <i>every</i> button carrying that marker attribute (login has one, register has one — one block of code handles both). For each, clicking reads which input it targets from the attribute value, then flips the input between <code class="inline-code">type="password"</code> (dots) and <code class="inline-code">type="text"</code> (readable), swapping the eye/eye-off icon and its screen-reader label as it goes. That's the whole magic — there is no "unmasking" feature in HTML, just a type attribute being toggled.</p></div></div>
+
+    <div class="tip"><b>Why so little JavaScript?</b> Everything here could have been built with a heavy framework (React etc.) — but the app needs none of it. The pages are rebuilt by PHP on every request; JS only handles things PHP <i>can't</i> do, because PHP already finished before the page reached you. Choosing no tool is also a decision.</div>
+  </div>
+</section>
+
+<!-- ============================ PART 7 ============================ -->
+<section class="part" id="style-css">
+  <div class="part-head">
+    <span class="num">7</span>
+    <div><h2>assets/css/style.css</h2><p>One file, 694 lines, every visual decision in the app. Explained as a guided tour by section rather than line-by-line — CSS repeats itself by nature.</p></div>
+  </div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">assets/css/style.css</span><span class="file-tag">CSS · 694 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the entire wardrobe. It's organised in labelled sections — and its first ~70 lines are the smartest part, so we'll dwell there.</p>
+
+    <h3 class="sec"><span class="tick">›</span> Lines 1–68 — Design tokens (the swatch book)</h3>
+    <div class="pair"><div class="code"><div class="code-head"><span>CSS</span><span>lines 7–16</span></div>
+<pre>:root {
+  --bg: #f4f7f9;
+  --bg-elevated: #ffffff;
+  --text: #10333e;
+  --text-muted: #51707c;
+  --border: #dbe6ea;
+
+  --primary: #0891b2;
+  --green: #16a34a;
+  --amber: #d97706;
+  --violet: #7c3aed;
+  --red: #dc2626;
+
+  --sidebar-bg: #0b3948;
+  ...
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><code class="inline-code">:root</code> means "on the very top element" — so these apply everywhere. Each <code class="inline-code">--name: value;</code> is a <dfn>custom property</dfn> (a CSS variable), exactly like the <code class="inline-code">--h</code> the chart used — except these store <i>colours</i>.</p><p>The trick: every other rule in the file says <code class="inline-code">color: var(--text)</code> instead of a raw hex code. Change one line here, and 600 lines of styling update. The palette itself is a calm blue-grey world with a cyan accent — the same identity the PHP app and this guide share.</p></div></div>
+
+    <div class="pair"><div class="code"><div class="code-head"><span>CSS</span><span>lines 41–47</span></div>
+<pre>:root[data-theme="dark"] {
+  --bg: #0c1a20;
+  --bg-elevated: #12262e;
+  --text: #e2eef2;
+  --text-muted: #8fa9b3;
+  --border: #1e3944;
+  --primary: #22d3ee;
+  ...
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>This is the entire dark mode.</b> One selector: "when the html tag says <code class="inline-code">data-theme="dark"</code>, redefine the same variables with night-time values." No component rule mentions dark mode <i>anywhere else in the file</i> — because every component reads the variables, and the variables just changed. This is why the app's dark mode works everywhere with zero extra code: the JavaScript flips one attribute, and this block does the rest. (Dark isn't a naive colour-inversion either — the accent is brightened, soft backgrounds become dark tints of their hue, shadows deepen.)</p><p>The tokens also include <code class="inline-code">--radius</code> (how rounded corners are) and <code class="inline-code">--shadow</code> (how cards lift off the page), so even the "feel" is adjustable in one place.</p></div></div>
+
+    <h3 class="sec"><span class="tick">›</span> Lines 70–95 — The reset &amp; base</h3>
+    <div class="pair"><div class="code"><div class="code-head"><span>CSS</span><span>lines 71–89</span></div>
+<pre>*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The reset:</b> browsers apply their own default margins and sizing quirks to everything; these lines say "wipe that — I'll decide". <code class="inline-code">box-sizing: border-box</code> is the big one: it makes an element's stated width <i>include</i> its padding and border, which is how every developer wishes boxes worked by default.</p><p><b>body</b> sets the app-wide defaults: the font, the line spacing (1.6 is comfortable for reading), text colour, background.</p><p><b>:focus-visible</b> draws a clear ring around whatever you've reached by <b>keyboard Tab</b> — invisible for mouse users, essential for keyboard ones. Accessibility again.</p></div></div>
+
+    <h3 class="sec"><span class="tick">›</span> Lines 97–226 — The app shell</h3>
+    <div class="pair"><div class="code"><div class="code-head"><span>CSS</span><span>lines 98–114, 140–157</span></div>
+<pre>body { display: flex; }
+
+.sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar__link { display: flex; align-items: center; gap: 12px; ... }
+.sidebar__link:hover { background: rgb(255 255 255 / 0.07); color: #fff; }
+.sidebar__link.is-active { background: rgb(34 211 238 / 0.16); color: var(--sidebar-text-active); }
+
+.main { flex: 1; min-width: 0; }
+
+.topbar { display: flex; align-items: center; gap: 12px; position: sticky; top: 0; ... }</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>body { display:flex }</b> is the whole two-column layout in one line: sidebar on the left, main content filling the rest (<code class="inline-code">flex: 1</code>). <code class="inline-code">flex-shrink: 0</code> = "never squeeze my 248px".</p><p><b>position: sticky</b> keeps the sidebar and topbar pinned while content scrolls underneath — the "app" feel.</p><p><b>The nav link rules</b> show the class system working: base <code class="inline-code">.sidebar__link</code>, a <code class="inline-code">:hover</code> state, and the <code class="inline-code">.is-active</code> state that PHP printed for the current page (Part 2). Three rules, three appearances, one element.</p><p>Down here too: the avatar (a circle with a gradient background — CSS paints it, PHP supplies the letter), the buttons in all their flavours (<code class="inline-code">--primary</code>, <code class="inline-code">--ghost</code>, <code class="inline-code">--danger</code>, size modifiers <code class="inline-code">--sm</code>/<code class="inline-code">--block</code>), the icon buttons, and the green/red alert boxes — each a small family of rules built on <code class="inline-code">var(--…)</code> tokens.</p></div></div>
+
+    <h3 class="sec"><span class="tick">›</span> Lines 228–461 — Cards, stats, chart, table</h3>
+    <div class="pair"><div class="code"><div class="code-head"><span>CSS</span><span>lines 353–357, 413–449</span></div>
+<pre>.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.chart { display: flex; align-items: stretch; gap: 12px; height: 240px; }
+
+.chart__bar {
+  width: 100%;
+  height: var(--h, 10%);        /* ← the height PHP computed! */
+  background: linear-gradient(180deg, var(--accent), var(--primary));
+  transition: height 0.5s ease;
+}
+
+.chart__label { font-size: 11px; color: var(--text-muted); }</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The stat grid:</b> <code class="inline-code">repeat(auto-fit, minmax(200px, 1fr))</code> is a magic spell meaning "fit as many ≥200px cards per row as the screen allows". Four cards on a desktop, one-per-row on a phone, no media query needed.</p><p><b>The chart, completed:</b> remember PHP printing <code class="inline-code">style="--h: 73%"</code>? Here's the other half: <code class="inline-code">height: var(--h, 10%)</code> reads it (the <code class="inline-code">10%</code> is just a fallback). The bar is a gradient from bright cyan to teal, and <code class="inline-code">transition: height 0.5s</code> makes bars <i>grow</i> smoothly when the page loads. A working animated chart in ~15 lines, no library.</p><p><b>The table rules</b> style the log-book listing: uppercase grey column headings, hairline row separators, a soft highlight when you hover a row, and the <code class="inline-code">td-truncate</code> cell that keeps long work descriptions from stretching the table. The <code class="inline-code">table-wrap</code> around it allows sideways scrolling <i>within the card</i> on narrow screens instead of breaking the page.</p></div></div>
+
+    <h3 class="sec"><span class="tick">›</span> Lines 495–612 — Forms, search, empty states</h3>
+    <div class="pair"><div class="code"><div class="code-head"><span>CSS</span><span>lines 507–528, 566–574</span></div>
+<pre>input[type="text"], input[type="email"], ..., textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.field-error { color: var(--red); font-size: 12.5px; }
+
+.input-trailing {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>One rule, every input type</b> — the grouped selector means text, email, password, date, number and search boxes all share one identical look. On <b>:focus</b> (clicked into), the border turns cyan and a soft 3-pixel glow appears — the standard "you are typing here" cue.</p><p><b>color-mix()</b> is a modern CSS function: "take the primary colour, blend 18% of it with transparency". One colour token, a whole glow.</p><p><b>.field-error</b> is where the red messages from register/profile end up. <b>.input-trailing</b> is how the password-eye button floats <i>inside</i> the input's right edge: the parent is <code class="inline-code">position: relative</code>, this is <code class="inline-code">position: absolute</code> pinned right and vertically centred.</p><p>This section also dresses the search bar, the friendly "empty log book" boxes, and the delete-preview quote block.</p></div></div>
+
+    <h3 class="sec"><span class="tick">›</span> Lines 614–693 — Auth pages &amp; the mobile drawer</h3>
+    <div class="pair"><div class="code"><div class="code-head"><span>CSS</span><span>lines 615–624, 673–689</span></div>
+<pre>.auth-body {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background:
+    radial-gradient(800px 400px at 85% -10%, ...cyan glow...),
+    radial-gradient(700px 380px at -10% 110%, ...accent glow...),
+    var(--bg);
+}
+
+@media (max-width: 860px) {
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);     /* parked off-screen left */
+    transition: transform 0.25s ease;
+  }
+  body.sidebar-open .sidebar { transform: translateX(0); }
+  body.sidebar-open .sidebar-backdrop { display: block; }
+  .sidebar-toggle { display: inline-flex; }
+}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The login/register backdrop:</b> <code class="inline-code">place-items: center</code> dead-centres the card, and the two <code class="inline-code">radial-gradient</code>s paint soft cyan glows into two corners — the subtle "designed" backdrop behind the auth cards.</p><p><b>The mobile drawer, completed:</b> this <code class="inline-code">@media (max-width: 860px)</code> block only applies on screens narrower than 860px. There, the sidebar becomes <code class="inline-code">position: fixed</code> and <code class="inline-code">translateX(-100%)</code> slides it fully off-screen. When app.js adds <code class="inline-code">sidebar-open</code> to the body (you saw that in Part 6), the second rule slides it back in, and the dim backdrop appears behind it. The hamburger button, <code class="inline-code">display: none</code> on desktop, becomes visible here. The <code class="inline-code">transition</code> is what makes it glide rather than teleport.</p><p>That closes the loop on the whole responsive story: <b>PHP prints state classes → JS flips switches → CSS moves furniture</b>.</p></div></div>
+  </div>
+</section>
+
+<!-- ============================ PART 8 ============================ -->
+<section class="part" id="requirements">
+  <div class="part-head">
+    <span class="num">8</span>
+    <div><h2>The Python twin</h2><p>The <code class="inline-code">backend/</code> folder is the same app rebuilt as a pure data API in FastAPI. Same database, same rules, no visible pages. 13 files follow.</p></div>
+  </div>
+
+  <div class="tip"><b>Why does this exist?</b> A PHP page mixes logic and HTML — perfect for browsers. But a future phone app or a React front-end would want <b>just the data</b>, as JSON. FastAPI is the popular Python framework for exactly that. Both apps talk to the <i>same</i> MySQL tables, so an entry created in either appears in both. The security model differs too: PHP uses session lockers + CSRF tickets; the API hands you a <dfn>JWT</dfn> (a signed digital wristband you show on every request — explained at security.py).</div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">requirements.txt</span><span class="file-tag">Config · 12 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the shopping list. Each line is a ready-made Python package the project needs; <code class="inline-code">pip install -r requirements.txt</code> fetches them all. <code class="inline-code">&gt;=0.115</code> means "version 0.115 or newer".</p>
+    <div class="spec-wrap"><table class="spec">
+      <tr><th>Package</th><th>What it does here</th></tr>
+      <tr><td>fastapi</td><td>The framework itself — turns Python functions into web endpoints.</td></tr>
+      <tr><td>uvicorn</td><td>The server that actually runs FastAPI (the <code class="inline-code">uvicorn app.main:app</code> command).</td></tr>
+      <tr><td>sqlalchemy</td><td>The bridge to MySQL — lets you query the database with Python objects instead of raw SQL.</td></tr>
+      <tr><td>pymysql + cryptography</td><td>The driver that physically speaks MySQL's protocol; cryptography is needed for MySQL 8's login handshake.</td></tr>
+      <tr><td>pydantic + pydantic-settings</td><td>Data checking: "this field must be an email, that one 8+ characters" — declared, not hand-coded. Settings reads the .env file.</td></tr>
+      <tr><td>email-validator</td><td>The muscle behind Pydantic's <code class="inline-code">EmailStr</code> type.</td></tr>
+      <tr><td>passlib + bcrypt (&lt;4.1)</td><td>Password hashing — deliberately the <b>same bcrypt algorithm PHP uses</b>, so a hash made by either app verifies in both. (The version cap dodges a known bcrypt-4.1/passlib bug.)</td></tr>
+      <tr><td>pyjwt</td><td>Creates and verifies the JWT login tokens.</td></tr>
+      <tr><td>python-multipart</td><td>Lets the login endpoint read form data (the OAuth2 standard way).</td></tr>
+    </table></div>
+  </div>
+
+  <div class="file" id="env-example">
+    <div class="file-head"><span class="file-name">backend/.env.example</span><span class="file-tag">Config · 12 lines</span></div>
+    <p class="file-what"><b>What it is:</b> a template for a secrets file. You copy it to <code class="inline-code">.env</code> (the real one) and fill in values. The point of the pattern: secrets stay out of the code, and <code class="inline-code">.gitignore</code> keeps the real file from ever being shared.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>dotenv</span><span>whole file</span></div>
+<pre>DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=siwes_tracker
+DB_USER=root
+DB_PASS=
+
+JWT_SECRET=change-me-in-production
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>The same five database settings as config.php, in <code class="inline-code">NAME=value</code> form. The defaults match XAMPP so both apps work out of the box.</p><p><b>JWT_SECRET:</b> the secret ink the server signs its wristbands with — anyone holding this could forge valid tokens, hence "change-me-in-production" and the comment showing how to generate a real random one. <b>1440</b> minutes = a token expires after 24 hours.</p></div></div>
+  </div>
+
+  <div class="file" id="py-main">
+    <div class="file-head"><span class="file-name">backend/app/main.py</span><span class="file-tag">Python · 46 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the front door of the API — assembles the app from its three routers and answers two meta questions ("who are you?", "are you alive?"). This is the file the <code class="inline-code">uvicorn app.main:app</code> command points at.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 9–31</span></div>
+<pre>from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app import router_auth, router_logs, router_misc
+from app.core.config import settings
+
+app = FastAPI(
+    title="SIWES Tracker API",
+    description="REST API for the SIWES Tracker student log book. …",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(router_auth.router)
+app.include_router(router_logs.router)
+app.include_router(router_misc.router)</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>app = FastAPI(…)</b> creates the application object — the thing every later <code class="inline-code">@app.get</code> or router attaches to.</p><p><b>CORS middleware:</b> a traffic rule for browsers. A page at <code class="inline-code">siteA.com</code> is normally forbidden from calling <code class="inline-code">siteB.com</code>'s API; this middleware stamps the responses with "outside pages may call me" — set wide open (<code class="inline-code">*</code> = everywhere) because this is a local dev tool.</p><p><b>include_router ×3:</b> bolts the three route groups on. The docstring also mentions <code class="inline-code">/docs</code> — FastAPI gives a free, interactive documentation page at that address where you can click "Try it out" on any endpoint.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 38–45</span></div>
+<pre>@app.get("/", tags=["meta"])
+def root() -&gt; dict[str, str]:
+    return {"name": "SIWES Tracker API", "docs": "/docs", "health": "/health"}
+
+@app.get("/health", tags=["meta"])
+def health() -&gt; dict[str, str]:
+    return {"status": "ok"}</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p>The two simplest endpoints in the project. <code class="inline-code">@app.get("/")</code> = "when someone GETs the root address, run the function below and send back whatever it returns" — here a small dictionary that FastAPI converts to JSON automatically. The <code class="inline-code">-&gt; dict[str, str]</code> is just a type hint: "returns a dict of text to text". <code class="inline-code">/health</code> is the standard "am I up?" ping that monitoring tools tap.</p></div></div>
+  </div>
+
+  <div class="file" id="py-config">
+    <div class="file-head"><span class="file-name">backend/app/core/config.py</span><span class="file-tag">Python · 33 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the Python config.php. Reads the <code class="inline-code">.env</code> file once and exposes the values as typed settings.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 12–33</span></div>
+<pre>class Settings(BaseSettings):
+    db_host: str = "127.0.0.1"
+    db_port: int = 3306
+    db_name: str = "siwes_tracker"
+    db_user: str = "root"
+    db_pass: str = ""
+
+    jwt_secret: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24  # 24h
+
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+
+@lru_cache
+def get_settings() -&gt; Settings:
+    return Settings()
+
+settings = get_settings()</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>class Settings(BaseSettings):</b> each line says "a setting, its type, and a default if the .env doesn't provide one". Pydantic reads <code class="inline-code">.env</code>, matches names case-insensitively (<code class="inline-code">DB_HOST</code> fills <code class="inline-code">db_host</code>), and even converts types (the text "3306" becomes the number 3306).</p><p><b>@lru_cache</b> = "run this function once, remember the result, hand back the same object every future call" — Python's built-in memory. So the whole app shares one Settings instance.</p><p>Functionally identical to the PHP constants — just with defaults and types declared.</p></div></div>
+  </div>
+
+  <div class="file" id="py-database">
+    <div class="file-head"><span class="file-name">backend/app/core/database.py</span><span class="file-tag">Python · 36 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the Python db() from helpers.php — the phone line to MySQL, built on SQLAlchemy.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 15–35</span></div>
+<pre>engine = create_engine(
+    "mysql+pymysql://{user}:{password}@{host}:{port}/{name}".format(
+        user=settings.db_user, password=settings.db_pass,
+        host=settings.db_host, port=settings.db_port, name=settings.db_name,
+    ),
+    pool_pre_ping=True,
+    pool_recycle=3600,
+)
+
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+
+def get_db() -&gt; Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>engine:</b> the connection pool — a small stack of ready phone lines to MySQL, opened lazily. The URL is the same DSN idea as PDO, glued with <code class="inline-code">.format()</code> (Python's fill-in-the-blanks). <b>pool_pre_ping=True</b> = "test each line before using it" so an overnight-idle connection doesn't crash the morning request; <b>pool_recycle=3600</b> = retire lines older than an hour.</p><p><b>SessionLocal:</b> a factory producing conversation objects — each web request gets its own.</p><p><b>get_db()</b> is the elegant part: it <code class="inline-code">yield</code>s a session to whoever asked (FastAPI injects it into endpoints via <code class="inline-code">Depends</code>), and the <code class="inline-code">finally: db.close()</code> guarantees the line is returned <i>no matter how the request ended</i> — success, error, crash. "Yield" here means "pause and hand this out, resume when they're done".</p></div></div>
+  </div>
+
+  <div class="file" id="py-security">
+    <div class="file-head"><span class="file-name">backend/app/core/security.py</span><span class="file-tag">Python · 40 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the Python password_hash/password_verify plus the JWT wristband factory. The file's whole job: prove identities without ever storing a readable password.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 12–23</span></div>
+<pre>pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(plain: str) -&gt; str:
+    return pwd_context.hash(plain)
+
+def verify_password(plain: str, hashed: str) -&gt; bool:
+    try:
+        return pwd_context.verify(plain, hashed)
+    except ValueError:
+        return False</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>bcrypt</b> — the same scramble algorithm PHP's <code class="inline-code">password_hash()</code> picked. That single choice is why an account registered in the PHP app can log in through this API and vice-versa: same hash format, same verification.</p><p><b>The try/except</b> on verify: a malformed stored hash would raise an error; this converts any such surprise into a calm <code class="inline-code">False</code> ("password wrong") instead of a crash.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 26–39</span></div>
+<pre>def create_access_token(subject: str) -&gt; str:
+    expires = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
+    payload: dict[str, Any] = {"sub": subject, "exp": expires}
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+def decode_access_token(token: str) -&gt; str | None:
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        sub = payload.get("sub")
+        return str(sub) if sub is not None else None
+    except jwt.PyJWTError:
+        return None</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>What a JWT is:</b> a tamper-proof name-tag. It carries visible text — <code class="inline-code">{"sub": "5", "exp": …}</code> ("this is student 5, valid until…") — plus a <b>signature</b> made with the server's secret ink. Read it: yes. Alter it: the signature no longer matches and it's rejected. So the server can trust "this is student 5" without storing any session.</p><p><b>create</b> stamps the payload + expiry and signs it. <b>decode</b> checks the signature and expiry; <i>any</i> problem (forged, expired, garbled) is caught and becomes <code class="inline-code">None</code> — the caller then rejects the request. The <code class="inline-code">str | None</code> return type says exactly that: "a string, or nothing".</p></div></div>
+  </div>
+
+  <div class="file" id="py-models">
+    <div class="file-head"><span class="file-name">backend/app/models.py</span><span class="file-tag">Python · 55 lines</span></div>
+    <p class="file-what"><b>What it is:</b> a Python mirror of the two database tables. Each class describes a table; each attribute a column — so Python code can say <code class="inline-code">student.full_name</code> instead of writing SQL strings. Crucially it <b>never creates tables</b> — the PHP schema (database.sql) stays the single owner.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 18–37 (student) · 40–55 (entry)</span></div>
+<pre>class Student(Base):
+    __tablename__ = "students"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    matric_no: Mapped[str] = mapped_column(String(40), unique=True)
+    ...columns exactly as in database.sql...
+    entries: Mapped[list["LogEntry"]] = relationship(
+        back_populates="student", cascade="all, delete-orphan"
+    )
+
+class LogEntry(Base):
+    __tablename__ = "log_entries"
+    ...
+    entry_date: Mapped[date] = mapped_column(Date)
+    hours_worked: Mapped[Decimal] = mapped_column(DECIMAL(4, 1))
+    work_done: Mapped[str] = mapped_column(Text)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"))
+    student: Mapped[Student] = relationship(back_populates="entries")</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>__tablename__</b> pins the class to the exact existing MySQL table — the names and types here must match database.sql, and they do, column for column. <code class="inline-code">str | None</code> = "nullable column".</p><p><b>entries / relationship:</b> the foreign key from Part 1, experienced as convenience: given a student, <code class="inline-code">student.entries</code> is automatically all their log days — SQLAlchemy writes the JOIN for you. <code class="inline-code">cascade="all, delete-orphan"</code> mirrors <code class="inline-code">ON DELETE CASCADE</code>.</p><p><b>After the daily switch:</b> the LogEntry mould now has <code class="inline-code">entry_date</code> as a Date and <code class="inline-code">DECIMAL(4,1)</code> hours — and the old <code class="inline-code">days_worked</code> column is simply gone: each row <i>is</i> a day now.</p></div></div>
+  </div>
+
+  <div class="file" id="py-schemas">
+    <div class="file-head"><span class="file-name">backend/app/schemas.py</span><span class="file-tag">Python · 98 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the doorman. Where models describe what's <i>in the database</i>, schemas describe what's <i>allowed through the API</i> — every incoming request is checked against these moulds before any endpoint code runs, and every outgoing object is reshaped through them. This is what replaces all that hand-written <code class="inline-code">if ($x === '')</code> checking in PHP.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 11–27</span></div>
+<pre>class StudentCreate(BaseModel):
+    matric_no: Annotated[str, Field(min_length=3, max_length=40)]
+    full_name: Annotated[str, Field(min_length=2, max_length=120)]
+    email: EmailStr
+    password: Annotated[str, Field(min_length=8, max_length=128)]
+    institution: str | None = None
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>StudentCreate</b> is the mould a registration request must fit: lengths bounded, email genuinely email-shaped (<code class="inline-code">EmailStr</code> checks properly, not just "has an @"), password ≥ 8. If any rule fails, FastAPI returns a precise 422 error naming the guilty field — before your code even runs. Compare register.php's five hand-written <code class="inline-code">if</code>s: same rules, now declared as data.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 58–76</span></div>
+<pre>class LogEntryBase(BaseModel):
+    entry_date: date
+    hours_worked: Annotated[Decimal, Field(gt=0, le=24)]
+    work_done: Annotated[str, Field(min_length=1, max_length=10_000)]
+    challenges: str | None = None
+    remarks: str | None = None
+
+class LogEntryUpdate(BaseModel):
+    entry_date: date | None = None
+    hours_worked: Annotated[Decimal | None, Field(gt=0, le=24)] = None
+    ...every field optional, so PATCH-style edits send only what changed...</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The same log-entry rules as log_form.php, as declarations:</b> the date is just a date — no Monday-snapping any more, since daily entries take the day at face value (the old <code class="inline-code">snap_to_monday</code> validator was deleted with the weekly era) — hours above 0 and ≤ 24, matching PHP's half-day-to-full-day range, work description required, challenges/remarks optional. Any violating request bounces with a 422 that names the field.</p><p><b>LogEntryUpdate</b> makes everything optional so an edit only has to send the parts it changes. The <code class="inline-code">= None</code> default is what "optional" means to a computer.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 79–98</span></div>
+<pre>class LogEntryOut(LogEntryBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    student_id: int
+    created_at: datetime | None
+
+class DashboardStats(BaseModel):
+    entries: int
+    total_hours: Decimal
+    avg_hours: Decimal
+    week_span: int
+
+class ChartPoint(BaseModel):
+    entry_date: date
+    hours_worked: Decimal</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>LogEntryOut:</b> the shape of an entry <i>coming back out</i>; <code class="inline-code">from_attributes=True</code> lets Pydantic read it straight off a SQLAlchemy model. Note there's no password-hash field anywhere on the way out — leaks become structurally impossible. <b>DashboardStats:</b> the daily book reports <code class="inline-code">avg_hours</code> in place of total-days-worked (the rows <i>are</i> the days now). <b>ChartPoint</b> carries one day's date + hours — the response mould for the hours-per-day chart.</p></div></div>
+  </div>
+
+  <div class="file" id="py-deps">
+    <div class="file-head"><span class="file-name">backend/app/dependencies.py</span><span class="file-tag">Python · 27 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the Python require_login(). One reusable check: "who is asking?" — run before every protected endpoint.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 11–26</span></div>
+<pre>oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+def get_current_student(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -&gt; Student:
+    credentials_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    subject = decode_access_token(token)
+    if subject is None:
+        raise credentials_error
+    student = db.get(Student, int(subject))
+    if student is None:
+        raise credentials_error
+    return student</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>OAuth2PasswordBearer:</b> "expect a header that says <code class="inline-code">Authorization: Bearer &lt;token&gt;</code>; pull the token out" — the industry-standard way APIs carry the wristband. No header? Automatic 401.</p><p><b>get_current_student</b> then chains three checks: decode the token (invalid → 401), look up that student id (gone → 401), and hand back the Student object. Any endpoint that declares <code class="inline-code">student: Student = Depends(get_current_student)</code> gets the real, verified student with zero repeated code — the exact same job require_login() does in PHP, expressed as dependency injection.</p></div></div>
+  </div>
+
+  <div class="file" id="py-auth">
+    <div class="file-head"><span class="file-name">backend/app/router_auth.py</span><span class="file-tag">Python · 66 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the API's register/login/me — the Python login.php + register.php, minus all HTML.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 17–43</span></div>
+<pre>@router.post("/register", response_model=StudentOut, status_code=status.HTTP_201_CREATED)
+def register(payload: StudentCreate, db: Session = Depends(get_db)) -&gt; Student:
+    matric = payload.matric_no.strip().upper()
+    email = payload.email.strip().lower()
+
+    conflicts = db.execute(
+        select(Student).where((Student.email == email) | (Student.matric_no == matric))
+    ).scalars().all()
+    for row in conflicts:
+        if row.email.lower() == email:
+            raise HTTPException(status.HTTP_409_CONFLICT, "This email is already registered.")
+        raise HTTPException(status.HTTP_409_CONFLICT, "This matric number is already registered.")
+
+    student = Student(
+        matric_no=matric, full_name=payload.full_name.strip(), email=email,
+        password_hash=hash_password(payload.password),
+        institution=payload.institution, course_of_study=payload.course_of_study,
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    return student</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The decorator line is the route:</b> "POST to /auth/register, validate the body against StudentCreate, reply with the shape of StudentOut and status 201". FastAPI reads all of that and builds the endpoint — plus its documentation — automatically.</p><p><b>The body:</b> same logic as register.php — uppercase the matric, lowercase the email, check for clashes (409 = "conflict" in HTTP-speak), then create. <code class="inline-code">db.add / db.commit / db.refresh</code> is SQLAlchemy's insert rhythm: stage it, save it, re-read it so the new ID is filled in. The response_model guarantees the password hash can never leak out — StudentOut simply has no such field.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 46–65</span></div>
+<pre>@router.post("/login", response_model=Token)
+def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)) -&gt; Token:
+    student = db.execute(
+        select(Student).where(Student.email == form.username.strip().lower())
+    ).scalar_one_or_none()
+
+    if student is None or not verify_password(form.password, student.password_hash):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password.")
+
+    return Token(access_token=create_access_token(str(student.id)))
+
+@router.get("/me", response_model=StudentOut)
+def me(student: Student = Depends(get_current_student)) -&gt; Student:
+    return student</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>login</b> takes the standard OAuth2 form (username + password — "username" holds the email). Same anti-enumeration trick as PHP: one vague message whether the email was unknown or the password wrong. Success = a freshly minted JWT carrying the student's id.</p><p><b>me</b> is the tiniest endpoint and the clearest demo of dependency injection: one parameter line = "verify the caller's token and give me the student" — then just return it.</p></div></div>
+  </div>
+
+  <div class="file" id="py-logs">
+    <div class="file-head"><span class="file-name">backend/app/router_logs.py</span><span class="file-tag">Python · 142 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the full log-entry CRUD as endpoints — the Python logs.php + log_form.php + log_delete.php. Every route begins with the same two <code class="inline-code">Depends</code>: who's asking, and which DB session to use.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 23–38, 70–84</span></div>
+<pre>@router.get("", response_model=list[LogEntryOut])
+def list_entries(q: Annotated[str | None, Query(max_length=100)] = None, student=Depends(get_current_student), db=Depends(get_db)):
+    stmt = select(LogEntry).where(LogEntry.student_id == student.id)
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where(
+            LogEntry.work_done.like(like) | LogEntry.challenges.like(like)
+            | func.cast(LogEntry.entry_date, sqlalchemy_String(10)).like(f"{q}%")
+        )
+    stmt = stmt.order_by(LogEntry.entry_date.desc())
+    return list(db.execute(stmt).scalars().all())
+
+def _check_duplicate_day(db, student_id, entry_date, exclude_id=None) -> None:
+    stmt = select(LogEntry.id).where(LogEntry.student_id == student_id, LogEntry.entry_date == entry_date)
+    if exclude_id is not None:
+        stmt = stmt.where(LogEntry.id != exclude_id)
+    if db.execute(stmt).scalar_one_or_none() is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "You already logged this day — update that entry instead.")</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>list_entries:</b> "GET /logs" — every day yours, newest first, with the same optional <code class="inline-code">?q=</code> search as logs.php (the <code class="inline-code">f"%{q}%"</code> builds the contains-pattern; SQLAlchemy's <code class="inline-code">.like()</code> is injection-safe the way PDO's <code class="inline-code">?</code> was). The <code class="inline-code">func.cast</code> line lets you search dates as text too.</p><p><b>_check_duplicate_day:</b> a private helper (the underscore means "internal") doing the duplicate-day check that log_form.php does inline — shared by create and update, with <code class="inline-code">exclude_id</code> so editing your own entry doesn't collide with itself. Duplicate → 409, the same kind refusal as PHP, word for word.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 41–55, 86–142</span></div>
+<pre>@router.get("/day/{entry_date}", response_model=LogEntryOut)
+def get_entry_by_day(entry_date: date, student=..., db=...):
+    ...one row WHERE student_id = you AND entry_date = that day, else 404...
+
+@router.post("", response_model=LogEntryOut, status_code=201)
+def create_entry(payload: LogEntryCreate, ...):
+    _check_duplicate_day(db, student.id, payload.entry_date)
+    entry = LogEntry(student_id=student.id, entry_date=payload.entry_date, ...)
+    db.add(entry); db.commit(); db.refresh(entry)
+    return entry
+
+@router.put("/{entry_id}", response_model=LogEntryOut)
+def update_entry(entry_id: int, payload: LogEntryUpdate, ...):
+    entry = db.get(LogEntry, entry_id)
+    if entry is None or entry.student_id != student.id:
+        raise HTTPException(404, "Entry not found.")
+    changes = payload.model_dump(exclude_unset=True)   # only the fields actually sent
+    if "entry_date" in changes:
+        _check_duplicate_day(db, student.id, changes["entry_date"], exclude_id=entry.id)
+        entry.entry_date = changes["entry_date"]
+    for field in ("hours_worked", "work_done", "challenges", "remarks"):
+        if field in changes: setattr(entry, field, ...)
+    db.commit(); db.refresh(entry)
+    return entry
+
+@router.delete("/{entry_id}", status_code=204)
+def delete_entry(entry_id: int, ...):  # same ownership check, then db.delete</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>A daily extra:</b> <code class="inline-code">GET /logs/day/2026-09-14</code> replaces the old week lookup — since dates are exact, the snap math is gone and it's a straight equality check.</p><p><b>create:</b> validate → check duplicate → insert → 201. <b>update:</b> fetch, and note the ownership clause translated directly from PHP: <code class="inline-code">entry.student_id != student.id</code> → 404, "to you it doesn't exist". <code class="inline-code">model_dump(exclude_unset=True)</code> means "only the fields the caller actually sent" — a true partial update.</p><p><b>delete:</b> same ownership check, then remove; 204 = "done, nothing to say back". No endpoint ever trusts an ID from the body without the ownership check — the API keeps PHP's promise that you can only ever touch your own days.</p></div></div>
+  </div>
+
+  <div class="file" id="py-misc">
+    <div class="file-head"><span class="file-name">backend/app/router_misc.py</span><span class="file-tag">Python · 95 lines</span></div>
+    <p class="file-what"><b>What it is:</b> the dashboard maths and the profile — the Python dashboard.php + profile.php. The SQL aggregates you learned in Part 4 reappear here through SQLAlchemy.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 21–47</span></div>
+<pre>@router.get("/dashboard/stats", response_model=DashboardStats)
+def dashboard_stats(student=..., db=...):
+    row = db.execute(
+        select(
+            func.count(LogEntry.id),
+            func.coalesce(func.sum(LogEntry.hours_worked), 0),
+            func.min(LogEntry.entry_date),
+            func.max(LogEntry.entry_date),
+        ).where(LogEntry.student_id == student.id)
+    ).one()
+
+    entries, total_hours, first_day, last_day = row
+    avg_hours = (total_hours / entries).quantize(Decimal("0.1")) if entries else Decimal("0")
+    week_span = (last_day - first_day).days // 7 + 1 if first_day else 0
+
+    return DashboardStats(entries=entries, total_hours=total_hours,
+                          avg_hours=avg_hours, week_span=int(week_span))</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>Same single clever query as dashboard.php</b> — count, sum, earliest and latest day — just written in Python: <code class="inline-code">func.count</code> = COUNT, <code class="inline-code">func.sum</code> = SUM, <code class="inline-code">func.coalesce</code> = COALESCE. One line unpacks the four results.</p><p><b>avg_hours</b> matches the PHP divide-by-zero guard; <b>the week-span line</b> is even tidier: dates subtract into a day-count directly, <code class="inline-code">// 7</code> is whole-number division, <code class="inline-code">+1</code> counts the first week. Same answers as the PHP — guaranteed by smoke tests.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 50–95</span></div>
+<pre>@router.get("/dashboard/chart", response_model=list[ChartPoint])
+def dashboard_chart(days: Annotated[int, Query(ge=1, le=60)] = 10, ...):
+    rows = db.execute(
+        select(LogEntry.entry_date, LogEntry.hours_worked)
+        .where(...).order_by(LogEntry.entry_date.desc()).limit(days)
+    ).all()
+    return [ChartPoint(entry_date=d, hours_worked=h) for d, h in reversed(rows)]
+
+...plus /profile (GET/PATCH) and /profile/password, unchanged by the daily switch...</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>chart:</b> the newest N <i>days</i> (caller chooses, 1–60, default 10 — the PHP default too) — then <code class="inline-code">reversed()</code> so it reads oldest-left, exactly like the dashboard's <code class="inline-code">array_reverse</code>. A <i>list comprehension</i> (the square-bracket loop) builds the response points in one line.</p><p><b>update_profile:</b> PATCH = partial update; only sent fields change; the ID comes from the token, never the request. <b>change_password:</b> verify current password first (same gate as profile.php), hash and save the new one. Same checks as PHP, new dialect.</p></div></div>
+  </div>
+
+  <div class="file" id="py-init">
+    <div class="file-head"><span class="file-name">backend/app/__init__.py</span><span class="file-tag">Python · 0 lines</span></div>
+    <p class="file-what"><b>What it is:</b> an empty file whose <i>existence</i> is the point. Python uses files named <code class="inline-code">__init__.py</code> as markers meaning "this folder is a package — its files can import each other". There's also one in <code class="inline-code">app/core/</code>. No code, no weight; without them, the imports in main.py wouldn't resolve. (The <code class="inline-code">__pycache__</code> folders beside them are Python's automatic compiled byte-code — safe to ignore, and git-ignored.)</p>
+  </div>
+
+  <div class="file" id="py-test">
+    <div class="file-head"><span class="file-name">backend/smoke_test.py</span><span class="file-tag">Python · 173 lines</span></div>
+    <p class="file-what"><b>What it is:</b> an automated rehearsal of the entire app. One test that walks the whole story — register → login → log two days → search → edit → dashboard → change password → delete — and checks the app says the right thing at every step. Runs against a pretend in-memory database, so it never touches your real data. Run it with <code class="inline-code">python smoke_test.py</code> and either it all passes silently, or it names exactly which step broke.</p>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 23–43</span></div>
+<pre>@pytest.fixture()
+def client(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    TestingSession = sessionmaker(bind=engine, ...)
+
+    def override_get_db():
+        db = TestingSession()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>The clever setup:</b> a fresh <b>SQLite</b> database (a tiny, file-less database) is created from the same models — so the test needs no MySQL at all, running even in CI pipelines. Then the real <code class="inline-code">get_db</code> is <i>swapped</i> for a test version via <code class="inline-code">dependency_overrides</code> — the same plug-in socket FastAPI uses everywhere, repointed at the pretend DB. <code class="inline-code">TestClient</code> then lets the test "call" the API directly, no server needed.</p></div></div>
+    <div class="pair"><div class="code"><div class="code-head"><span>Python</span><span>lines 46–140 excerpt</span></div>
+<pre>r = client.post("/auth/register", json={"matric_no": "csc/2021/0123", ...})
+assert r.status_code == 201
+assert body["matric_no"] == "CSC/2021/0123"          # upper-cased
+assert "password" not in body and "password_hash" not in body
+
+r = client.post("/logs", headers=auth, json={"entry_date": "2026-07-06", "hours_worked": 8, ...})
+assert r.status_code == 201                          # the date is stored as given
+
+r = client.post("/logs", headers=auth, json={"entry_date": "2026-07-06", ...})
+assert r.status_code == 409                          # same day twice: refused
+
+r = client.post("/logs", headers=auth, json={"entry_date": "2026-07-08", "hours_worked": 30, ...})
+assert r.status_code == 422                          # a day has at most 24 hours
+
+r = client.get("/dashboard/stats", headers=auth)
+assert stats["total_hours"] == "17.0" and stats["avg_hours"] == "8.5" and stats["week_span"] == 1</pre></div>
+    <div class="note"><span class="lbl">What it says</span><p><b>assert</b> = "this must be true, or the test fails loudly". Each one is a promise about behaviour: registration capitalises matric numbers; responses never leak password data; a duplicate day gets 409; thirty hours gets rejected; the dashboard sums 8.0 + 9.0 = 17.0, averages 8.5, and spans one week.</p><p>The later lines check the security promises too: a second student gets 404 when poking at the first student's entry (ownership!), a tampered token gets 401, and the new owner's password works after a change. <b>This file is what let me rewrite both apps for daily entries and know instantly that nothing broke</b> — tests are how you change code with confidence.</p></div></div>
+  </div>
+
+  <div class="file" id="py-gitignore">
+    <div class="file-head"><span class="file-name">backend/.gitignore</span><span class="file-tag">Config · 11 lines</span></div>
+    <p class="file-what"><b>What it is:</b> a note-to-self list for version control: files Git should pretend don't exist. Here: Python's <code class="inline-code">__pycache__</code> folders (regenerable), the <code class="inline-code">.env</code> (your real secrets — the whole point of the .example file), and virtual-env folders (<code class="inline-code">.venv</code>, each machine's private copy of the installed packages). Small file, prevents the classic accident of committing passwords.</p>
+  </div>
+</section>
+
+<!-- ============================ PART 9 ============================ -->
+<section class="part" id="leftovers">
+  <div class="part-head">
+    <span class="num">9</span>
+    <div><h2>Wrap-up</h2><p>Two stragglers, the guidebooks, and a dictionary of every term this document used.</p></div>
+  </div>
+
+  <div class="file">
+    <div class="file-head"><span class="file-name">.claude/ + .pytest_cache/ + project-analysis.html</span><span class="file-tag">Housekeeping</span></div>
+    <p class="file-what"><b>What they are:</b> three things that aren't part of the app's story, for completeness:</p>
+    <div class="primer">
+      <ul>
+        <li><code class="inline-code">.claude/settings.json</code> — saved preferences for the Claude Code tool used while building; nothing to do with the running app.</li>
+        <li><code class="inline-code">.pytest_cache/</code> — a scratch folder pytest (the test runner) leaves behind after running smoke_test.py: which tests ran, which last failed. Regenerates itself; safe to delete.</li>
+        <li><code class="inline-code">project-analysis.html</code> — a code-analysis report page from an earlier review of the project. Documentation, not app.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="file" id="readmes">
+    <div class="file-head"><span class="file-name">README.md + backend/README.md</span><span class="file-tag">Markdown · guides</span></div>
+    <p class="file-what"><b>What they are:</b> the instruction manuals, written in Markdown (the light, plain-text formatting used everywhere on GitHub — <code class="inline-code">#</code> makes headings, <code class="inline-code">**x**</code> makes bold, backticks mark code). Every serious project has one at its root; tools display it automatically.</p>
+    <div class="primer">
+      <h4><span class="sig">›</span> README.md — the PHP app's manual</h4>
+      <ul>
+        <li>What the app is and its feature list — then a folder map matching the parts of this guide.</li>
+        <li><b>Setup, step by step:</b> copy into XAMPP's <code class="inline-code">htdocs</code> → start Apache + MySQL → import database.sql in phpMyAdmin → check config.php → open localhost. Plus the optional seed.php demo-data step.</li>
+        <li>An alternative "PHP's built-in server" path using router.php, for when Apache isn't wanted.</li>
+        <li>A <b>viva/demo cheat-sheet</b> — the talking points (prepared statements, escaping, CSRF, the one-form CRUD pattern, the confirmation-page delete, the database-level uniqueness rule). If you're defending this project, that section is your script.</li>
+      </ul>
+      <h4 style="margin-top:14px"><span class="sig">›</span> backend/README.md — the API's manual</h4>
+      <ul>
+        <li>One-time setup (virtual environment, pip install) and the <code class="inline-code">uvicorn app.main:app --reload</code> start command.</li>
+        <li>A table of every endpoint with method, path, and purpose — the same map as Part 8.</li>
+        <li>The "notes" section covers the design promises: shared schema, bcrypt compatibility between the two apps, one-entry-per-day in both dialects, 24-hour tokens.</li>
+        <li>Copy-pasteable curl examples, and the pointer that <code class="inline-code">/docs</code> is the easiest way to explore.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sec" id="glossary" style="margin-top:40px"><span class="tick">›</span> The dictionary — every jargon word in this guide</h3>
+  <dl class="gloss">
+    <div><dt>Apache</dt><dd>The web-server program inside XAMPP: receives browser requests, runs PHP files, sends pages back.</dd></div>
+    <div><dt>Array</dt><dd>A list of values in one variable. In PHP, arrays can carry labels: <code class="inline-code">["email" =&gt; "…"]</code>.</dd></div>
+    <div><dt>bcrypt</dt><dd>The one-way password-scrambling algorithm both apps use — deliberately matched so accounts work across both.</dd></div>
+    <div><dt>bool</dt><dd>A value that is only ever true or false.</dd></div>
+    <div><dt>Cache (verb)</dt><dd>To remember a result so it isn't computed twice. Both apps cache the DB connection and the student row per page.</dd></div>
+    <div><dt>cascade</dt><dd>The tidy-up rule: delete a student and their log entries are deleted automatically with them.</dd></div>
+    <div><dt>class</dt><dd>A mould describing a kind of thing — what data it holds and what it can do. Objects are things built from the mould.</dd></div>
+    <div><dt>Composer</dt><dd>PHP's package installer — this project deliberately doesn't need it. requirements.txt is the Python equivalent.</dd></div>
+    <div><dt>constant</dt><dd>A locked variable: set once, unchangeable (PHP's <code class="inline-code">define()</code>).</dd></div>
+    <div><dt>cookie</dt><dd>A small note a website stores in your browser. The session key lives here.</dd></div>
+    <div><dt>CRUD</dt><dd>Create, Read, Update, Delete — the four verbs of almost all apps. Parts 4–5 walked each one.</dd></div>
+    <div><dt>CSRF</dt><dd>An attack where another site submits forms "as you". Defeated by the secret ticket in every form (Part 2).</dd></div>
+    <div><dt>decorator</dt><dd>Python's <code class="inline-code">@sticker</code> above a function, adding powers — routes, caching, validation.</dd></div>
+    <div><dt>dependency injection</dt><dd>FastAPI's habit of handing functions what they need (a DB session, the logged-in student) just by declaring it in the signature.</dd></div>
+    <div><dt>DSN</dt><dd>The one-line address of a database: type + host + port + name + charset.</dd></div>
+    <div><dt>endpoint</dt><dd>One address one API responds to, like <code class="inline-code">POST /logs</code>.</dd></div>
+    <div><dt>engine (MySQL)</dt><dd>The machinery under a table. InnoDB is the modern one, required for foreign keys.</dd></div>
+    <div><dt>escape / e()</dt><dd>Turning dangerous characters into safe display text before printing user input — the XSS shield.</dd></div>
+    <div><dt>FastAPI</dt><dd>The Python framework the backend twin is built with; also generates free interactive docs at /docs.</dd></div>
+    <div><dt>flash message</dt><dd>A message stored in the session, shown once on the next page, then deleted.</dd></div>
+    <div><dt>foreign key</dt><dd>A column that must point at a real row in another table — the link between log_entries and students.</dd></div>
+    <div><dt>GET</dt><dd>The "show me a page" request. Parameters ride in the URL.</dd></div>
+    <div><dt>hash (password)</dt><dd>A one-way scramble of a password. The real password is never stored anywhere.</dd></div>
+    <div><dt>HTML</dt><dd>The skeleton language of web pages: headings, boxes, inputs, forms.</dd></div>
+    <div><dt>IIFE</dt><dd>"Immediately-invoked function expression" — JavaScript wrapped so it runs once and keeps its variables private.</dd></div>
+    <div><dt>JSON</dt><dd>Text shaped like data (<code class="inline-code">{"hours": 40}</code>) — the language APIs speak.</dd></div>
+    <div><dt>JWT</dt><dd>A signed, tamper-proof name-tag the API issues at login; you show it on every request for 24h.</dd></div>
+    <div><dt>local storage</dt><dd>A tiny browser notepad per website — the theme choice lives here.</dd></div>
+    <div><dt>localhost / 127.0.0.1</dt><dd>"This same computer" — the address the server answers on during development.</dd></div>
+    <div><dt>NULL</dt><dd>"No value" — an allowed empty state for a column or variable.</dd></div>
+    <div><dt>PDO</dt><dd>PHP's standard tool for talking to databases; the app's every query goes through it.</dd></div>
+    <div><dt>prepared statement</dt><dd>A query with <code class="inline-code">?</code> slots filled separately — making SQL injection impossible.</dd></div>
+    <div><dt>PRIMARY KEY</dt><dd>A column guaranteed unique per row — the official row ID.</dd></div>
+    <div><dt>Pydantic</dt><dd>Python's declare-the-rules validation library; schemas.py is written with it.</dd></div>
+    <div><dt>regex</dt><dd>Pattern-matching for text, e.g. "shaped like 2026-09-07".</dd></div>
+    <div><dt>REST API</dt><dd>An API whose endpoints read/write data as JSON, addressed by URL — the backend twin's whole interface.</dd></div>
+    <div><dt>session</dt><dd>The server-side private locker per visitor; the browser holds only its key (a cookie).</dd></div>
+    <div><dt>session fixation</dt><dd>Attack where the attacker picks your session key in advance. Defeated by regenerating the key at login.</dd></div>
+    <div><dt>SQL</dt><dd>The language MySQL speaks: SELECT / INSERT / UPDATE / DELETE.</dd></div>
+    <div><dt>SQL injection</dt><dd>Attack via typed input becoming SQL. Defeated by prepared statements everywhere.</dd></div>
+    <div><dt>SVG</dt><dd>A drawing described with coordinates instead of pixels — sharp at any size. Every icon here.</dd></div>
+    <div><dt>timestamp</dt><dd>A moment in time as a count of seconds — how computers do date maths.</dd></div>
+    <div><dt>type casting</dt><dd>Forcing a value into another type: <code class="inline-code">(int)$x</code> in PHP, <code class="inline-code">int(x)</code> in Python.</dd></div>
+    <div><dt>UNIQUE</dt><dd>A rule forbidding two rows from sharing a value — email, matric no, and the student+day pair.</dd></div>
+    <div><dt>XAMPP</dt><dd>The free bundle (Apache + MySQL + PHP) that runs this project locally.</dd></div>
+    <div><dt>XSS</dt><dd>Attack where typed input becomes running code in someone's browser. Defeated by e() on every output.</dd></div>
+  </dl>
+
+  <div class="tip" style="margin-top:30px"><b>You made it.</b> Two apps, 32 files, one filing cabinet — and not a line unaccounted for. If you keep one mental model, keep this one: <b>a request arrives, PHP runs a recipe, the recipe reads and writes two tables, a page is mixed and sent back</b>. Everything you read was a variation on that sentence.</div>
+</section>
+
+<footer class="foot">
+  <span>SIWES Tracker · every file, explained</span>
+  <span>PHP · SQL · CSS · JS · Python</span>
+</footer>
+
+</div></main>
+</body>
+</html>

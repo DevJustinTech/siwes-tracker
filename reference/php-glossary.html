@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHP Glossary — SIWES Tracker</title>
+<link rel="stylesheet" href="../assets/teach/course.css">
+<style>
+  dt { font-weight: bold; margin-top: 1.3rem; font-family: var(--mono); font-size: 0.9rem; }
+  dd { margin: 0.2rem 0 0 0; }
+  dd .where { font-family: var(--sans); font-size: 0.76rem; color: var(--ink-soft); }
+  code { font-size: 0.85em; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="course-tag">SIWES Tracker · Reference</p>
+  <h1>PHP glossary</h1>
+  <p class="dek">Every language construct and function used in this project, with the file:line where you can see it in the wild.</p>
+
+  <div class="meta">Definitions per <a href="https://www.php.net/manual/en/">the PHP Manual</a> · grow this as lessons cover more files</div>
+
+  <h2><span class="num">A</span>The basics you meet immediately</h2>
+  <dl>
+    <dt>&lt;?php … ?&gt;</dt>
+    <dd>Open/close PHP tag. Everything between them is <em>code</em> the server runs; everything outside them is <em>text</em> (HTML) the server passes through to the browser untouched. <span class="where">Seen in: every file · <a href="https://www.php.net/manual/en/language.basic-syntax.phptags.php">Manual</a></span></dd>
+
+    <dt>&lt;= … &gt;</dt>
+    <dd>Short echo tag — prints an expression inline in HTML. <code>&lt;?= e($name) ?&gt;</code> means "run <code>e($name)</code>, write its return value into the page here". <span class="where">login.php:38 · Manual: <a href="https://www.php.net/manual/en/function.echo.php">echo</a> shorthand</span></dd>
+
+    <dt>$variable</dt>
+    <dd>Variables always start with <code>$</code>. Loosely typed — the same name can hold a string now, an array later. <span class="where">everywhere · <a href="https://www.php.net/manual/en/language.variables.basics.php">Manual</a></span></dd>
+
+    <dt>'single' vs "double"</dt>
+    <dd>Single quotes: literal text. Double quotes: <code>$vars</code> inside get interpolated (replaced by their values). <span class="where">'Location: ' . $path uses concatenation in helpers.php:35 · <a href="https://www.php.net/manual/en/language.types.string.php">Manual</a></span></dd>
+
+    <dt>. and .=</dt>
+    <dd>The string join operator. <code>'a' . 'b'</code> → <code>"ab"</code>. <span class="where">helpers.php:16 (building the DSN), config.php:22 · <a href="https://www.php.net/manual/en/language.operators.string.php">Manual</a></span></dd>
+
+    <dt>require_once / require</dt>
+    <dd>Insert another file's code here and run it. <code>require</code> hard-fails if the file is missing; <code>_once</code> makes repeat requires no-ops (essential since many pages require helpers.php). Variables defined before the <code>require</code> stay visible inside the required file — that's how the layout partials know <code>$page_title</code>. <span class="where">login.php:2, layout-top.php:13 · <a href="https://www.php.net/manual/en/function.require-once.php">Manual</a></span></dd>
+
+    <dt>__DIR__</dt>
+    <dd>Magic constant: the absolute path of the directory containing <em>this</em> file. Makes requires work no matter where PHP was started from. <span class="where">helpers.php:8 · <a href="https://www.php.net/manual/en/language.constants.predefined.php">Manual</a></span></dd>
+
+    <dt>function name(type $x): type</dt>
+    <dd>A function declaration with a typed parameter (<code>string $value</code>) and a typed return (<code>: string</code> / <code>: void</code> / <code>: ?array</code>). With <code>declare(strict_types=1)</code> active, types are enforced, not coerced. <span class="where">helpers.php:12, 27 · <a href="https://www.php.net/manual/en/functions.arguments.php#functions.arguments.type-declaration">Manual</a></span></dd>
+
+    <dt>?</dt>
+    <dd>Two uses. (1) <em>Nullable type</em>: <code>?string</code> = "a string or null" (<code>e(?string $value)</code>). (2) Ternary: <code>$a ? $b : $c</code> = if $a then $b else $c. <span class="where">helpers.php:27, dashboard.php:20</span></dd>
+
+    <dt>?? and ?: and ?-&gt;</dt>
+    <dd><code>$x ?? 'default'</code>: null-coalesce — use 'default' if <code>$x</code> is null/unset (no error). <code>$a ?: $b</code>: elvis — use $b if $a is <em>falsy</em> (empty, 0, ''). <code>$str-&gt;method()</code>: object call — you'll see it on PDO objects. <span class="where">?? login.php:13 · ?: dashboard.php:125 · -&gt; everywhere on $stmt · <a href="https://www.php.net/manual/en/language.operators.comparison.php">Manual</a></span></dd>
+
+    <dt>fn($x) =&gt; …</dt>
+    <dd>Arrow function — a one-expression inline function that auto-captures outer variables. <span class="where">register.php:9 ($old), dashboard.php:35 · <a href="https://www.php.net/manual/en/functions.arrow.php">Manual</a></span></dd>
+
+    <dt>foreach (… as $k =&gt; [$a, $b])</dt>
+    <dd>Loop over arrays; <code>=&gt;</code> gives key; square brackets <em>destructure</em> a nested array into named variables. <span class="where">layout-top.php:45 · <a href="https://www.php.net/manual/en/control-structures.foreach.php">Manual</a></span></dd>
+
+    <dt>array literals &amp; keys</dt>
+    <dd><code>['a' =&gt; 1, 'b' =&gt; 2]</code> is a map (string keys); <code>[1, 2, 3]</code> is a list. Access with <code>$arr['key']</code>. <span class="where">config.php:22–25 (cookie params), icons.php:9 (icon paths)</span></dd>
+  </dl>
+
+  <h2><span class="num">B</span>The web-runtime vocabulary</h2>
+  <dl>
+    <dt>$_SERVER, $_GET, $_POST, $_SESSION</dt>
+    <dd>Superglobals — arrays PHP fills in for you, visible everywhere. <code>$_SERVER['REQUEST_METHOD']</code>: "GET or POST?" <code>$_GET['id']</code>: URL param. <code>$_POST['email']</code>: form field. <code>$_SESSION</code>: per-user server-side storage, persisted between requests via a cookie. <span class="where">login.php:10,13 · log_delete.php:6 · helpers.php:42 · <a href="https://www.php.net/manual/en/language.variables.superglobals.php">Manual</a></span></dd>
+
+    <dt>header('Location: …')</dt>
+    <dd>Send a redirect instruction to the browser (HTTP 302). Only works before any output has been sent — which is why <code>redirect()</code> is always called at the top of a page, never after HTML. <span class="where">helpers.php:35 · <a href="https://www.php.net/manual/en/function.header.php">Manual</a></span></dd>
+
+    <dt>exit</dt>
+    <dd>Stop running this file immediately. <code>redirect()</code> = send the header, then <code>exit</code> so no leftover code executes. <span class="where">helpers.php:36 (after redirect) and helpers.php:101 (CSRF expiry) · <a href="https://www.php.net/manual/en/function.exit.php">Manual</a></span></dd>
+
+    <dt>htmlspecialchars()</dt>
+    <dd>Replace <code>&lt; &gt; &amp; " '</code> with safe entities so user text can't become markup. The entire point of <code>e()</code>. <span class="where">helpers.php:29 · <a href="https://www.php.net/manual/en/function.htmlspecialchars.php">Manual</a></span></dd>
+
+    <dt>password_hash / password_verify</dt>
+    <dd>Turn a password into a salted bcrypt hash / check a candidate password against a stored hash — the hash can be checked but never reversed. <span class="where">register.php:43, login.php:23 · <a href="https://www.php.net/manual/en/function.password-hash.php">Manual</a></span></dd>
+
+    <dt>PDO</dt>
+    <dd>PHP's database driver class: connect once (<code>new PDO($dsn, …)</code>), query safely with placeholders (<code>prepare()</code> + <code>execute([$vals])</code>), fetch rows (<code>fetch()</code> = one row, <code>fetchAll()</code> = all rows, <code>fetchColumn()</code> = one value). <span class="where">helpers.php:12–24 · <a href="https://www.php.net/manual/en/book.pdo.php">Manual</a></span></dd>
+
+    <dt>session_start / session_regenerate_id</dt>
+    <dd><code>session_start()</code> resumes this visitor's server-side session (identified by an httponly cookie). <code>session_regenerate_id(true)</code> gives them a fresh session id after login so a pre-login id can't be hijacked. <span class="where">config.php:26, login.php:24 · <a href="https://www.php.net/manual/en/features.sessions.php">Manual</a></span></dd>
+
+    <dt>hash_equals</dt>
+    <dd>Compare two strings without leaking timing information — the safe way to compare secrets like CSRF tokens. <span class="where">helpers.php:99 · <a href="https://www.php.net/manual/en/function.hash-equals.php">Manual</a></span></dd>
+  </dl>
+
+  <div class="lesson-nav">
+    <span>Companion: <a href="file-map.html">file map</a></span>
+    <span><a href="../lessons/0001-every-line-complete-guide.html">Lesson 1 →</a></span>
+  </div>
+
+</div>
+</body>
+</html>

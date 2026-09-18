@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Complete Guide to SIWES Tracker — One Lesson, Every Line</title>
+<link rel="stylesheet" href="../assets/teach/course.css">
+<style>
+  .toc { font-family: var(--sans); font-size: 0.9rem; background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.4rem; margin: 2rem 0; }
+  .toc ol { margin: 0; padding-left: 1.2rem; }
+  .toc li { margin: 0.3rem 0; }
+  .part { margin-top: 5rem; padding-top: 1rem; border-top: 3px solid var(--accent); }
+  .part h2 { margin-top: 0.6rem; }
+  details { font-family: var(--sans); font-size: 0.9rem; background: #fff; border: 1px solid var(--rule); border-radius: 6px; padding: 0.6rem 0.9rem; margin: 0.5rem 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { color: var(--accent); margin-bottom: 0.4rem; }
+  .checkpoint { font-family: var(--sans); font-size: 0.85rem; background: var(--warn-soft); border: 1px dashed var(--warn); border-radius: 6px; padding: 0.7rem 1rem; margin: 1.5rem 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="course-tag">SIWES Tracker · The Complete Guide</p>
+  <h1>Every line, one lesson</h1>
+  <p class="dek">The whole app in a single document: how the machine runs, what every line of the 12 PHP files does, why each security measure exists, and the answers to the questions a viva would ask.</p>
+
+  <div class="meta">Scope: all core PHP + <code>database.sql</code> · Python <code>backend/</code> folder is <strong>not part of this app</strong> and never mentioned again · work through it in sittings, one part at a time; each part ends with a from-memory checkpoint</div>
+
+  <div class="toc">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#p1">The machine: what "running a PHP file" means</a></li>
+      <li><a href="#p2">config.php — the foundation, line by line</a></li>
+      <li><a href="#p3">helpers.php — the toolbox, function by function</a></li>
+      <li><a href="#p4">The partials — icons, layout-top, layout-bottom</a></li>
+      <li><a href="#p5">database.sql — the schema and every constraint</a></li>
+      <li><a href="#p6">login.php, register.php, logout.php — authentication</a></li>
+      <li><a href="#p7">log_form.php, logs.php, log_delete.php, profile.php — CRUD</a></li>
+      <li><a href="#p8">dashboard.php — stats, arrays, the pure-CSS chart</a></li>
+      <li><a href="#p9">seed.php &amp; router.php — the support files</a></li>
+      <li><a href="#p10">The security map — the five defences, and the attacks they stop</a></li>
+      <li><a href="#p11">Viva drill — 14 questions, with model answers</a></li>
+      <li><a href="#p12">Final exam — 12 mixed questions (no scrolling back)</a></li>
+    </ol>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p1">
+  <h2><span class="num">1</span>The machine: what "running a PHP file" means</h2>
+
+  <p>Everything else in this document only makes sense on top of one idea, so we start there: <strong>in this app, a file is a program the web server runs once per browser request.</strong> You never "launch" the app. Each URL request wakes a file up, it computes, prints HTML, and dies.</p>
+
+  <ol class="steps">
+    <li>Your browser sends an HTTP request: <code>GET /siwes%20tracker/dashboard.php</code>.</li>
+    <li><strong>Apache</strong> (XAMPP's web server) maps that URL to the folder on disk and sees the <code>.php</code> extension. It does <em>not</em> send the file to the browser — it hands it to the <strong>PHP interpreter</strong>.</li>
+    <li>PHP executes the file <strong>top to bottom</strong>. Text outside <code>&lt;?php … ?&gt;</code> tags is copied verbatim into the output buffer; text inside them <em>runs</em>. (<a href="https://www.php.net/manual/en/language.basic-syntax.phptags.php">PHP tags — Manual</a>)</li>
+    <li>When the file finishes, Apache packages whatever was printed as the HTTP response. <strong>The browser never receives PHP source code</strong> — only HTML.</li>
+  </ol>
+
+  <p>Because the script dies after every request, there is no "while the app is open" — which raises the central question of the whole course: <em>where does state live between requests?</em> Exactly two answers:</p>
+
+  <table>
+    <tr><th>Store</th><th>Lives in</th><th>Used here for</th></tr>
+    <tr><td>MySQL</td><td>XAMPP's MySQL server, permanent</td><td>Students, passwords (hashed), log entries</td></tr>
+    <tr><td><code>$_SESSION</code></td><td>A file on the server, keyed to a browser <strong>cookie</strong></td><td>"who is logged in", flash messages, CSRF token</td></tr>
+  </table>
+
+  <p>The session trick is the one to internalise now (full detail in part 2). When <code>session_start()</code> runs, PHP reads an incoming cookie (<code>PHPSESSID=abc123…</code>) and loads the server-side file <code>sess_abc123…</code> into <code>$_SESSION</code>. At the end of the request, whatever you put into <code>$_SESSION</code> is saved back. So <code>$_SESSION['student_id'] = 5</code> in login.php and reading it in dashboard.php isn't memory — it's a <em>message passed through the disk between two separate runs</em>.</p>
+
+  <div class="note"><strong>Two consequences that explain most of the code you'll see:</strong> (1) every page re-does its setup from zero — that's why every file starts with <code>require_once __DIR__ . '/helpers.php';</code>; (2) sending the user somewhere means telling <em>their browser</em> to start a new request — <code>header('Location: …')</code> then <code>exit</code> — which is why <code>redirect()</code> can only be called <em>before any HTML is printed</em>: headers ship out at the start of the response, before the body.</div>
+
+  <div class="checkpoint"><strong>Hands-on checkpoint:</strong> in XAMPP with the app open, press F12 → Network tab, log out via the sidebar. You should see <code>logout.php</code> return status <strong>302</strong> with an empty response body, then an automatic second request <code>login.php</code> (200). That 302 <em>is</em> <code>redirect()</code> in the wild.</div>
+
+  <div class="quiz" data-answer="0" data-why="Apache hands .php files to the PHP interpreter on the server; the browser receives only the printed HTML, never the source.">
+    <p class="quiz-q">Who executes the PHP in dashboard.php?</p>
+    <button class="quiz-option">The PHP interpreter on the server</button>
+    <button class="quiz-option">The JavaScript engine in the browser</button>
+    <button class="quiz-option">The MySQL query processor on disk</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="header() writes the redirect into the response's head, which ships before the body — after HTML output starts, PHP cannot add it.">
+    <p class="quiz-q">Why can redirect() only run before any HTML prints?</p>
+    <button class="quiz-option">Headers ship before the body does</button>
+    <button class="quiz-option">PHP disables functions after output</button>
+    <button class="quiz-option">Apache rejects late redirects always</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The script dies with the response. $_SESSION is a server file keyed to the visitor's cookie — the only PHP-visible state that survives between requests.">
+    <p class="quiz-q">After a request finishes, where does a variable's value survive?</p>
+    <button class="quiz-option">Nowhere — only session and database</button>
+    <button class="quiz-option">Anywhere — PHP keeps globals warm</button>
+    <button class="quiz-option">Only in cookies the browser can read</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p2">
+  <h2><span class="num">2</span>config.php — the foundation, line by line</h2>
+
+  <p>Every page in the app eventually loads <code>config.php</code> (via <code>helpers.php</code>). Its 31 lines do four jobs: declare strict typing, publish settings as constants, start the session safely, and fix the clock. Here it is whole, then dissected.</p>
+
+<pre><code>&lt;?php
+declare(strict_types=1);
+
+define('DB_HOST', '127.0.0.1');
+define('DB_NAME', 'siwes_tracker');
+define('DB_USER', 'root');
+define('DB_PASS', '');          // XAMPP default: empty password
+define('DB_PORT', 3306);
+
+define('APP_NAME', 'SIWES Tracker');
+define('APP_URL', '/siwes%20tracker');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'httponly' =&gt; true,
+        'samesite' =&gt; 'Lax',
+    ]);
+    session_start();
+}
+
+date_default_timezone_set('Africa/Lagos');</code></pre>
+
+  <h3><code>declare(strict_types=1);</code> (line 7)</h3>
+  <p>Opt this <em>file</em> into strict type checking: pass an int where a <code>string</code> parameter is declared and PHP throws instead of quietly converting. It's <strong>per-file</strong> — which is why login.php (which has no declare) behaves slightly differently from helpers.php (which does). The app's style guide is in one line, and it matches <a href="https://phptherightway.com/">PHP The Right Way</a>'s recommendation. (<a href="https://www.php.net/manual/en/functions.arguments.php#functions.arguments.type-declaration">Type declarations — Manual</a>)</p>
+
+  <h3>The seven <code>define()</code> lines (10–18)</h3>
+  <p><code>define('DB_HOST', '127.0.0.1')</code> creates a <em>constant</em>: an uppercase global name, <code>DB_HOST</code>, whose value <strong>no code can overwrite later</strong>. Constants vs variables — <code>DB_HOST</code> (no <code>$</code>) can't be reassigned mid-request; <code>$x</code> can. Why <code>127.0.0.1</code> and not <code>localhost</code>: <code>localhost</code> makes MySQL try a local named-pipe/socket first; the numeric IP forces a normal TCP connection — deterministic on XAMPP on Windows.</p>
+  <p><code>DB_PASS</code> is empty because that's XAMPP's stock <code>root</code>. That's fine <em>here</em> — dev machine, no external access — but is exactly the kind of line a viva will point at: on a real server, never the root user, never an empty password, never the credentials in the repo.</p>
+  <p><strong>Dead code find:</strong> <code>APP_URL</code> (line 18) is defined but <em>used nowhere</em> — grep the app and you'll only ever see <code>APP_NAME</code>. It's a leftover; every link in the app is relative (<code>href="logs.php"</code>), which is why moving the folder doesn't break anything. Knowing your own files well enough to call out their vestigial bits is viva gold.</p>
+
+  <h3>The session block (21–27)</h3>
+  <p>Read it inside-out:</p>
+  <ul>
+    <li><code>session_status() === PHP_SESSION_NONE</code> — "has a session <em>not</em> started yet?" The guard exists because config.php might run after something else already called <code>session_start()</code>; starting twice would throw a warning.</li>
+    <li><code>session_set_cookie_params([...])</code> — configures the <strong>cookie</strong> that identifies this browser's session. Two flags, both security: <code>httponly</code> = JavaScript in the browser cannot read the cookie, so an XSS bug can't steal the session id via script; <code>samesite Lax</code> = the cookie is withheld on cross-site <em>POSTs</em>, so another website can't silently submit a form to your app using this visitor's session. Both are defence-in-depth behind part 10's CSRF token. (<a href="https://www.php.net/manual/en/function.session-set-cookie-params.php">Manual</a>)</li>
+    <li><code>session_start()</code> — <strong>must</strong> come after setting the cookie params (they're read at start time, not retroactively), and it's the line that populates <code>$_SESSION</code> for the whole request. This is why config.php must load before any page reads <code>$_SESSION</code> — and why <code>require_once</code> is line 1 of the chain.</li>
+  </ul>
+
+  <h3><code>date_default_timezone_set('Africa/Lagos')</code> (line 30)</h3>
+  <p>Every <code>date()</code> and <code>strtotime()</code> call in the app — today's default in the log form, the friendly day labels, the week maths — reads this. Without it PHP defaults to UTC and would show "tonight" as "tomorrow" after 11pm. One line prevents an entire class of timezone bugs.</p>
+
+  <div class="quiz" data-answer="0" data-why="Constants created by define() cannot be reassigned; variables can. Settings like DB_HOST should be immutable for the request.">
+    <p class="quiz-q">Why are the DB settings constants rather than variables?</p>
+    <button class="quiz-option">Constants cannot get overwritten later</button>
+    <button class="quiz-option">Constants load faster than variables</button>
+    <button class="quiz-option">Constants hide values from other files</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Cookie flags are baked into the session cookie when session_start() creates it. After that, the cookie is already in flight — order matters, exactly as the code shows.">
+    <p class="quiz-q">Why must session_set_cookie_params() precede session_start()?</p>
+    <button class="quiz-option">The cookie is built at start, once</button>
+    <button class="quiz-option">Sessions lock after any first read</button>
+    <button class="quiz-option">PHP forbids params after two hundred</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="httponly blocks script access to the cookie; samesite=Lax stops it riding on cross-site POSTs. Both protect the session id from theft/abuse — a viva favourite.">
+    <p class="quiz-q">What do 'httponly' and 'samesite' defend against?</p>
+    <button class="quiz-option">Cookie theft and cross-site form posts</button>
+    <button class="quiz-option">Slow queries and dead server connections</button>
+    <button class="quiz-option">Duplicate accounts and forgotten passwords</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p3">
+  <h2><span class="num">3</span>helpers.php — the toolbox, function by function</h2>
+
+  <p>121 lines, 11 functions, loaded by every page. This file <em>is</em> the app's framework — understanding it is understanding the whole system. It begins:</p>
+
+<pre><code>&lt;?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/icons.php';</code></pre>
+
+  <p><code>__DIR__</code> = the absolute path of <em>this file's</em> directory — so the require works no matter where the server was started from. <code>require_once</code> = load and run it now; if it's already loaded in this request, skip silently. The <code>_once</code> matters because <code>icons.php</code> also needs helpers, and pages require helpers directly <em>and</em> through the layout — without the guard, PHP would redeclare <code>db()</code> and fatal.</p>
+
+  <h3><code>db()</code> — the only door to MySQL (lines 12–24)</h3>
+
+<pre><code>function db(): PDO
+{
+    static $pdo = null;
+    if ($pdo === null) {
+        $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE            =&gt; PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE =&gt; PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   =&gt; false,
+        ]);
+    }
+    return $pdo;
+}</code></pre>
+
+  <p>Every database line in the app starts with <code>db()</code>. Four ideas packed into one function:</p>
+  <ul>
+    <li><strong>The <code>static</code> trick.</strong> A <code>static</code> variable inside a function survives between <em>calls</em> (within one request). First call: <code>$pdo === null</code>, build the connection. Every later call: return the same object. This is a <em>lazy singleton</em> — one connection per request, created only if some code actually needs the DB. logout.php never queries the DB and never pays for a connection.</li>
+    <li><strong>The DSN.</strong> One string describing <em>where</em> to connect: driver, host, port, database, charset. <code>charset=utf8mb4</code> guarantees text arrives as true UTF-8 (and, historically, disables a charset-confusion injection vector).</li>
+    <li><strong>The three options.</strong> <code>ERRMODE_EXCEPTION</code>: a bad query throws a catchable exception instead of failing silently — the seed.php try/catch works because of this line. <code>FETCH_ASSOC</code>: rows come back as arrays keyed by column <em>name</em> — why you write <code>$row['work_done']</code> everywhere. <code>EMULATE_PREPARES =&gt; false</code>: don't fake prepared statements by string-building in PHP — send them to MySQL's real prepare/execute protocol, which is what makes <code>?</code> placeholders genuinely injection-proof. (<a href="https://www.php.net/manual/en/book.pdo.php">PDO — Manual</a>)</li>
+    <li><strong>Types.</strong> The signature <code>function db(): PDO</code> promises a PDO object back; with strict_types in this file, a violation is fatal, not sloppy.</li>
+  </ul>
+
+  <p>The whole app's DB usage is then just the same three-step dance (<a href="https://www.php.net/manual/en/pdo.prepare.php">prepare</a> → <a href="https://www.php.net/manual/en/pdostatement.execute.php">execute</a> → <a href="https://www.php.net/manual/en/pdostatement.fetch.php">fetch</a>):</p>
+
+<pre><code>$stmt = db()-&gt;prepare('SELECT * FROM students WHERE email = ?');
+$stmt-&gt;execute([$email]);
+$student = $stmt-&gt;fetch();        // one row, or false if none</code></pre>
+
+  <p>The <code>?</code> marks a <strong>placeholder</strong>: SQL structure is sent to MySQL first, the user's data separately afterwards. The data can <em>never</em> be parsed as SQL — that's why injection is impossible here, even though <code>$email</code> comes straight from a form. <code>fetch()</code> returns the next row (array) or <code>false</code>; <code>fetchAll()</code> returns all remaining rows as an array-of-arrays; <code>fetchColumn()</code> returns one scalar (you'll meet it in <code>siwes_week_number</code>).</p>
+
+  <h3><code>e()</code> — the output-escaping one-liner (27–30)</h3>
+
+<pre><code>function e(?string $value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}</code></pre>
+
+  <p><code>?string</code> = accepts a string <em>or null</em>; <code>(string)</code> coerces (null → ""), and <a href="https://www.php.net/manual/en/function.htmlspecialchars.php">htmlspecialchars</a> replaces <code>&lt; &gt; &amp; " '</code> with entities like <code>&amp;lt;</code> (<code>ENT_QUOTES</code> = also single quotes). The effect: if a student types <code>&lt;script&gt;alert(1)&lt;/script&gt;</code> into "work done", it is stored as text, and on output rendered as <em>visible text</em> instead of executing. This is the second great defence (XSS), and this six-letter function is why 200+ HTML lines across the app stay safe. Rule the codebase follows everywhere: <strong>data comes out of the DB dirty; it becomes HTML only through <code>e()</code>.</strong></p>
+
+  <h3>Auth helpers (33–66)</h3>
+
+<pre><code>function redirect(string $path): void
+{
+    header('Location: ' . $path);
+    exit;
+}
+
+function is_logged_in(): bool
+{
+    return isset($_SESSION['student_id']);
+}
+
+function require_login(): void
+{
+    if (!is_logged_in()) {
+        $_SESSION['flash_error'] = 'Please log in to continue.';
+        redirect('login.php');
+    }
+}</code></pre>
+
+  <ul>
+    <li><code>redirect()</code>: the part-1 lifecycle rule in code — send the 302, then <code>exit</code> so no stray code runs after we've told the browser to leave. Every <code>: void</code> return means "returns nothing".</li>
+    <li><code>is_logged_in()</code>: the entire authentication model is <em>one key in one array</em>. "Logged in" = a prior request wrote <code>student_id</code> into this session.</li>
+    <li><code>require_login()</code>: the gate, called as line 3 of every protected page. Note it writes <code>$_SESSION['flash_error']</code> directly rather than calling <code>flash('error', …)</code> — same key, just skipping the helper (a small inconsistency you're allowed to notice).</li>
+  </ul>
+
+<pre><code>function current_student(): ?array
+{
+    static $student = null;
+    static $loaded  = false;
+    if (!$loaded &amp;&amp; is_logged_in()) {
+        $stmt = db()-&gt;prepare('SELECT * FROM students WHERE id = ?');
+        $stmt-&gt;execute([$_SESSION['student_id']]);
+        $student = $stmt-&gt;fetch() ?: null;
+        $loaded  = true;
+    }
+    return $student;
+}</code></pre>
+
+  <p>The static-cache pattern again, twice over: <code>$loaded</code> ensures "checked the DB" is remembered even if the result was <code>no row</code> (<code>?:</code> — the elvis — turns <code>false</code> from fetch into <code>null</code>). A page like dashboard.php calls <code>current_student()</code> and gets a DB hit <em>once</em>, even if ten places ask. The <code>?array</code> return type: array or null, because in theory the session can name a student row that no longer exists (deleted account) — and <code>layout-top.php</code> is written to survive <code>null</code> (part 4).</p>
+
+  <h3><code>flash()</code> — the one-shot message system (69–78)</h3>
+
+<pre><code>function flash(string $key, ?string $message = null): ?string
+{
+    if ($message !== null) {
+        $_SESSION['flash_' . $key] = $message;
+        return null;
+    }
+    $value = $_SESSION['flash_' . $key] ?? null;
+    unset($_SESSION['flash_' . $key]);
+    return $value;
+}</code></pre>
+
+  <p>One function, two modes — the signature gives it away: <code>$message</code> defaults to <code>null</code>. Call it <em>with</em> a message → write into session (set mode). Call it <em>without</em> → read and immediately <code>unset()</code> (get mode). The unset is the whole point: a flash is shown once, then gone — reload the page and the green "Entry updated." banner doesn't come back. <code>??</code> keeps get-mode safe when there's nothing set (no warning, just null). This is how a page that <code>redirect()</code>s — ending its own request — can still show a message in the <em>next</em> request: the message rode the session across the gap from part 1.</p>
+
+  <h3>The CSRF trio (81–103) — quick pass now, full story in part 10</h3>
+
+<pre><code>function csrf_token(): string          // make (once) or return the session's secret random string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string          // hidden input to embed in every form
+{
+    return '&lt;input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"&gt;';
+}
+
+function csrf_verify(): void           // on POST: compare form value vs session value
+{
+    $token = $_POST['csrf_token'] ?? '';
+    if (!is_string($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        http_response_code(419);
+        exit('Page expired — please go back and try again.');
+    }
+}</code></pre>
+
+  <p><code>random_bytes(32)</code> is a cryptographically-secure random generator; <code>bin2hex</code> renders it as 64 hex characters. <code>hash_equals</code> compares the attacker's guess to the secret <em>without timing side-channel</em> (plain <code>===</code> on strings returns early at the first differing byte — theoretically observable). Status 419 is a non-standard "Page Expired" (popularised by Laravel) — any 4xx would do; dying immediately is the point. All three functions exist because every mutating form in the app carries the field and calls the verifier. Part 10 ties this to the actual attack.</p>
+
+  <h3>The two date helpers (106–120)</h3>
+
+<pre><code>function day_label(string $date): string
+{
+    return date('D d M Y', strtotime($date));
+}</code></pre>
+  <p><code>'2026-09-14'</code> → <code>strtotime</code> parses to a timestamp (with Lagos timezone from config!) → <code>date('D d M Y')</code> formats → <strong>"Mon 14 Sep 2026"</strong>. Every date you see rendered in the UI passes through here.</p>
+
+<pre><code>function siwes_week_number(array $student, string $date): int
+{
+    $stmt = db()-&gt;prepare('SELECT MIN(entry_date) FROM log_entries WHERE student_id = ?');
+    $stmt-&gt;execute([$student['id']]);
+    $first = $stmt-&gt;fetchColumn();
+    if (!$first) return 1;
+    $weeks = (int)floor((strtotime($date) - strtotime((string)$first)) / 604800);
+    return max(1, $weeks + 1);
+}</code></pre>
+  <p>"Which SIWES week is this?" — the student's <em>earliest</em> entry is week 1; every 604,800 seconds (= 7×24×3600, a week) advances it. <code>MIN()</code> with no rows returns <code>NULL</code> → <code>fetchColumn()</code> gives false → week 1. <code>max(1, …)</code> clamps against dates <em>before</em> the first entry (negative weeks). One subtlety worth seeing in logs.php: this runs <strong>one extra SQL query per rendered row</strong> — a classic "N+1". Fine for one student's dozens of rows; a scaling conversation to raise if asked.</p>
+
+  <div class="quiz" data-answer="0" data-why="static $pdo keeps the object between calls: first call connects, later calls reuse. One connection per request, and only if needed (lazy).">
+    <p class="quiz-q">What does the <code>static $pdo = null;</code> line accomplish?</p>
+    <button class="quiz-option">Reuses one connection across calls</button>
+    <button class="quiz-option">Shares a connection across all requests</button>
+    <button class="quiz-option">Opens a fresh connection on each call</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The SQL with its ? placeholders is prepared and sent first; values travel separately and are never parsed as SQL syntax. That separation is the injection defence.">
+    <p class="quiz-q">Why does <code>WHERE email = ?</code> with execute([$email]) block SQL injection?</p>
+    <button class="quiz-option">Structure and data ship separately</button>
+    <button class="quiz-option">The placeholder strips quotes from input</button>
+    <button class="quiz-option">PDO escapes the string before sending it</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="EMULATE_PREPARES=false turns off PHP's client-side fake prepares; statements go through MySQL's real prepare protocol — the genuine defence.">
+    <p class="quiz-q">What does <code>PDO::ATTR_EMULATE_PREPARES =&gt; false</code> choose?</p>
+    <button class="quiz-option">Real server-side prepared statements</button>
+    <button class="quiz-option">Faster string-built queries locally instead</button>
+    <button class="quiz-option">Hashing user input server-side before saves</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="fetch() gives one row array or false; the elvis ?: turns false into null, matching the declared ?array return type.">
+    <p class="quiz-q">In <code>current_student()</code>, what does <code>$stmt-&gt;fetch() ?: null</code> do?</p>
+    <button class="quiz-option">Converts no-row false into clean null</button>
+    <button class="quiz-option">Converts the student id into a nullable string</button>
+    <button class="quiz-option">Converts database errors into empty arrays</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Get-mode reads the key then unsets it — second call returns null. That's why the banner never reappears on reload.">
+    <p class="quiz-q">Why doesn't a flash message come back on the next page load?</p>
+    <button class="quiz-option">Reading it deletes it from session</button>
+    <button class="quiz-option">The browser blocks message caching</button>
+    <button class="quiz-option">PHP expires session keys per request</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="hash_equals compares in constant time — a timing attack on === could leak how many leading bytes of the secret match.">
+    <p class="quiz-q">Why compare CSRF tokens with <code>hash_equals()</code>, not <code>===</code>?</p>
+    <button class="quiz-option">To hide timing clues from attackers</button>
+    <button class="quiz-option">To accept hashes instead of plain strings</button>
+    <button class="quiz-option">To compare case-insensitively by default</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p4">
+  <h2><span class="num">4</span>The partials — icons, layout-top, layout-bottom</h2>
+
+  <p>Logged-in pages don't repeat their chrome. Instead each page is a three-act sandwich:</p>
+
+<pre><code>$page_title = 'Dashboard';
+$active     = 'dashboard';
+require __DIR__ . '/partials/layout-top.php';   // &lt;!doctype&gt; … sidebar … open &lt;main&gt;
+?&gt;
+   …page-specific HTML here…
+&lt;?php
+require __DIR__ . '/partials/layout-bottom.php'; // close &lt;main&gt;, footer, &lt;/html&gt;</code></pre>
+
+  <p>The variable-setting lines are an <strong>implicit contract</strong>: layout-top.php reads <code>$page_title</code> and <code>$active</code> because <code>require</code> runs the file <em>in the caller's variable scope</em> — the partial sees everything defined above it, and anything it defines leaks back. It's not magic, it's just lexical scope — but it's why the partials never work if you forget to set the variables first (they defend themselves: <code>$page_title = $page_title ?? APP_NAME;</code>).</p>
+
+  <h3>icons.php — a function that returns SVG</h3>
+
+<pre><code>function icon(string $name, string $class = 'icon'): string
+{
+    $paths = [
+        'home' =&gt; '&lt;path d="M3 10.5 12 3l9 7.5"/&gt;…',
+        // 20 more entries
+    ];
+
+    $d = $paths[$name] ?? $paths['check'];
+    return '&lt;svg class="' . e($class) . '" viewBox="0 0 24 24" …&gt;' . $d . '&lt;/svg&gt;';
+}</code></pre>
+
+  <p>A lookup array of SVG fragments keyed by name; <code>icon('trash')</code> returns the complete <code>&lt;svg&gt;</code> string — an <a href="https://en.wikipedia.org/wiki/Scalable_Vector_Graphics">SVG</a> is just XML between two tags, stroke-based paths that inherit the text colour via <code>currentColor</code>. <code>string $class = 'icon'</code> is a <strong>default parameter</strong> — call with one argument and it fills in the rest. Unknown names fall back to the check icon (<code>??</code>) rather than crashing. The whole icon "library" is one function and an array — no image files anywhere.</p>
+
+  <h3>layout-top.php — the shell</h3>
+
+<pre><code>require_once __DIR__ . '/../helpers.php';
+
+$page_title = $page_title ?? APP_NAME;
+$active     = $active     ?? '';
+$student    = current_student();
+$flashError = flash('error');
+$flashSuccess = flash('success');
+
+$navItems = [
+    'dashboard' =&gt; ['Dashboard',  icon('home')],
+    'logs'      =&gt; ['My Log Book', icon('book')],
+    'profile'   =&gt; ['Profile',     icon('user')],
+];</code></pre>
+
+  <p>The top of the file is all preparation, and it's instructive: it re-requires helpers (harmless <code>_once</code>), applies <code>??</code> defaults for the contract variables, then <strong>consumes the flashes right now</strong> (<code>flash('error')</code> — get mode — reads-and-deletes into local variables). That's why you never see a flash function called again lower down: they were read into <code>$flashError</code>/<code>$flashSuccess</code> before the HTML started. The nav is one array: key = page name, value = [label, svg]. Then:</p>
+
+<pre><code>&lt;?php foreach ($navItems as $key =&gt; [$label, $svg]): ?&gt;
+    &lt;a class="sidebar__link &lt;?= $active === $key ? 'is-active' : '' ?&gt;"
+       href="&lt;?= e($key) ?&gt;.php" &lt;?= $active === $key ? 'aria-current="page"' : '' ?&gt;&gt;
+        &lt;?= $svg ?&gt;&lt;span&gt;&lt;?= e($label) ?&gt;&lt;/span&gt;
+    &lt;/a&gt;
+&lt;?php endforeach; ?&gt;</code></pre>
+
+  <p>Three constructs in three lines: <code>foreach … as $key =&gt; [$label, $svg]</code> — loop with key, and <strong>destructure</strong> the two-element array into named variables. <code>$active === $key ? 'is-active' : ''</code> — ternary deciding whether this link is highlighted (the active page passes its key in <code>$active</code>; remember the contract). <code>href="&lt;?= e($key) ?&gt;.php"</code> — the nav's keys are <em>the filenames themselves</em>: 'logs' → <code>logs.php</code>.</p>
+
+  <p>Lower in the sidebar: <code>&lt;?= e(strtoupper(mb_substr($student['full_name'] ?? 'S', 0, 1))) ?&gt;</code> — the avatar. <code>?? 'S'</code> survives a null student (deleted account mid-session) without erroring; <code>mb_substr(…, 0, 1)</code> = first character, multibyte-safe (<code>mb_</code> functions understand UTF-8 characters; plain <code>substr</code> counts bytes and would mangle accented names); <code>strtoupper</code> capitalises. Then the flash banners render, guarded: <code>&lt;?php if ($flashSuccess): ?&gt;` — alternative syntax: a colon-ended <code>if</code> inside HTML, closed by <code>endif;</code>. PHP supports either style; inside templates the colon form reads better.</p>
+
+  <h3>layout-bottom.php</h3>
+
+<pre><code>    &lt;/main&gt;
+
+    &lt;footer class="footer"&gt;
+        &lt;small&gt;&amp;copy; &lt;?= date('Y') ?&gt; &lt;?= e(APP_NAME) ?&gt; — Built for SIWES log book management.&lt;/small&gt;
+    &lt;/footer&gt;
+&lt;/div&gt;
+&lt;script src="assets/js/app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+  <p><code>&amp;copy;</code> is the © HTML entity; <code>date('Y')</code> the self-updating year; then the single script tag for the whole app (theme toggle + mobile sidebar + password eye — client-side sugar only; <strong>every real behaviour of the app works without JavaScript</strong>). Notice there is no <code>&lt;?php</code> at its start — the file is HTML that ends in two PHP expressions. A PHP file doesn't even need to contain PHP.</p>
+
+  <div class="quiz" data-answer="0" data-why="require executes the file within the caller's symbol table — variables defined before the require line are visible inside, and vice versa.">
+    <p class="quiz-q">How does layout-top.php know <code>$page_title</code> is 'Dashboard'?</p>
+    <button class="quiz-option">Require runs it in the caller's scope</button>
+    <button class="quiz-option">Pages pass it as a function argument</button>
+    <button class="quiz-option">Sessions store titles between each load</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="flash('error') is get-mode: read + unset. The locals persist through the rest of this one request; the next request sees nothing.">
+    <p class="quiz-q">Why does layout-top call flash() at the top, storing results in locals?</p>
+    <button class="quiz-option">Reading early deletes it for later</button>
+    <button class="quiz-option">Headers must set before body output starts</button>
+    <button class="quiz-option">Session reads need a database connection</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="mb_substr counts characters in UTF-8; substr counts bytes. An initial 'Ọ' would be sliced into garbage by the byte version.">
+    <p class="quiz-q">Why <code>mb_substr</code> instead of plain <code>substr</code> for the avatar letter?</p>
+    <button class="quiz-option">Byte-based cuts break accented letters</button>
+    <button class="quiz-option">Multibyte functions also run faster here</button>
+    <button class="quiz-option">Plain substr cannot take a zero position</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p5">
+  <h2><span class="num">5</span>database.sql — the schema and every constraint</h2>
+
+  <p>The app has exactly two tables. Read <code>database.sql</code> alongside this; every line is a decision with a reason.</p>
+
+<pre><code>CREATE DATABASE IF NOT EXISTS siwes_tracker
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;</code></pre>
+
+  <p><code>utf8mb4</code> = the <em>real</em> UTF-8 for MySQL (the legacy <code>utf8</code> charset maxes at 3 bytes per character — no emoji, some scripts). <code>utf8mb4_unicode_ci</code> = collation (the rule set for comparing strings); <code>_ci</code> is case-<em>insensitive</em>: <code>'a@x.com' = 'A@X.COM'</code> is TRUE in comparisons. Remember this — it makes the email uniqueness below case-proof too. (<a href="https://dev.mysql.com/doc/refman/8.0/en/create-table.html">CREATE TABLE — MySQL Manual</a>)</p>
+
+<pre><code>CREATE TABLE IF NOT EXISTS students (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  matric_no     VARCHAR(40)  NOT NULL UNIQUE,
+  full_name     VARCHAR(120) NOT NULL,
+  email         VARCHAR(160) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  institution   VARCHAR(160) NULL,
+  … (course, placement org, supervisor) …
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;</code></pre>
+
+  <p>Line by line, the vocabulary of constraints:</p>
+  <ul>
+    <li><code>INT UNSIGNED</code>: whole numbers, no sign bit — negative ids impossible, positives double-range.</li>
+    <li><code>AUTO_INCREMENT PRIMARY KEY</code>: MySQL assigns <code>1, 2, 3…</code> automatically. The PK is <em>also</em> physically how InnoDB stores the rows (part-2 knowledge: the clustered index) and the value PDO tells you about after an insert — <code>$pdo-&gt;lastInsertId()</code> in seed.php.</li>
+    <li><code>NOT NULL</code> vs <code>NULL</code>: institution etc. may be empty (registered later via profile); name/email can't. <code>NULL</code> in SQL means "absent", not "empty string" — a distinction you saw PHP-side when <code>fetch()</code> returned <code>NULL</code>s needing <code>?: 'Not set'</code> on screen.</li>
+    <li><code>UNIQUE</code> on matric and email: the database <strong>refuses a second row</strong> with the same value, full stop — even under a race where two registrations pass the PHP check (part 7). UNIQUE is an index; the refusal beats any PHP you write.</li>
+    <li><code>password_hash VARCHAR(255)</code>: a bcrypt hash (<code>$2y$10$…</code>) is 60 chars; 255 is room for future algorithms (argon2id). The DB must never hold a plain password — login.php can verify without ever seeing the secret because of how these hashes work (part 6).</li>
+    <li><code>TIMESTAMP DEFAULT CURRENT_TIMESTAMP</code> / <code>… ON UPDATE …</code>: MySQL itself stamps rows on insert, and re-stamps on every update. Free audit columns — PHP never sets them.</li>
+    <li><code>ENGINE=InnoDB</code>: the transactional, FK-supporting storage engine (the old MyISAM can't do constraints).</li>
+  </ul>
+
+<pre><code>CREATE TABLE IF NOT EXISTS log_entries (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  student_id    INT UNSIGNED NOT NULL,
+  entry_date    DATE NOT NULL,
+  hours_worked  DECIMAL(4,1) NOT NULL DEFAULT 8.0,
+  work_done     TEXT NOT NULL,
+  challenges    TEXT NULL,
+  remarks       TEXT NULL,
+  … timestamps …
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_student_day (student_id, entry_date)
+) ENGINE=InnoDB;</code></pre>
+
+  <ul>
+    <li><code>DECIMAL(4,1)</code>: exact fixed-point — 4 digits, 1 after the point (max 999.9, and the app caps at 24). Why not a float? Floats store approximations; <code>0.5 + 0.5 + …</code> in binary can't land on exact hours. Money-and-hours values get DECIMAL. (PHP receives them as strings — hence every display casting <code>(float)</code>.)</li>
+    <li><code>TEXT</code>: long variable strings — no practical width for a day's narrative. (<code>work_done</code> is the one NOT NULL field; the rest are optional.)</li>
+    <li><code>FOREIGN KEY … REFERENCES students(id)</code>: student_id must point at a real student row — the DB, not PHP, enforces that no orphan log can exist. <code>ON DELETE CASCADE</code>: delete a student and MySQL deletes their entries automatically — referential integrity as policy.</li>
+    <li><code>UNIQUE KEY uq_student_day (student_id, entry_date)</code>: the <em>pair</em> must be unique (a student may log 2026-09-14 once; two students may each). This is the app's "one entry per day" rule's <strong>real</strong> enforcer — log_form.php's friendly check is the courtesy layer on top. A composite index also speeds up the app's most common query (<code>WHERE student_id = …</code>) — its leftmost column.</li>
+  </ul>
+
+  <p>The <code>logs.php</code> search uses <code>work_done LIKE '%term%'</code> — and here the two halves of this course meet: a <em>leading</em> wildcard can't use any index (there's no sorted structure to enter at), so that search scans. At one student's scale, irrelevant; at ten thousand students', a real conversation. You now know both layers — SQL and PHP — well enough to have that conversation in a viva.</p>
+
+  <div class="quiz" data-answer="0" data-why="uq_student_day is a UNIQUE KEY: any INSERT/UPDATE making the pair exist twice fails, no matter which code path tried it.">
+    <p class="quiz-q">What actually guarantees no student logs one date twice?</p>
+    <button class="quiz-option">The composite unique key blocks it</button>
+    <button class="quiz-option">The friendly PHP pre-insert check catches it</button>
+    <button class="quiz-option">The cascade delete option prevents duplicates</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="CASCADE: MySQL deletes dependent log_entries rows whenever the students row goes — no orphans, no PHP cleanup needed.">
+    <p class="quiz-q">A student row is deleted in phpMyAdmin. What happens to their entries?</p>
+    <button class="quiz-option">MySQL removes them automatically together</button>
+    <button class="quiz-option">They remain as orphaned rows forever</button>
+    <button class="quiz-option">The delete is refused unless empty first</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="utf8mb4 is full-width UTF-8 (4 bytes). Legacy 'utf8' is 3 bytes — it physically cannot store some characters people type.">
+    <p class="quiz-q">Why <code>utf8mb4</code> rather than plain <code>utf8</code>?</p>
+    <button class="quiz-option">Legacy utf8 cannot store some characters</button>
+    <button class="quiz-option">mb4 sorts text faster than legacy utf8</button>
+    <button class="quiz-option">Legacy utf8 breaks primary key values</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="DECIMAL stores digits exactly; FLOAT is binary-approximate (0.1+0.2 ≠ 0.3). Hour totals must add cleanly.">
+    <p class="quiz-q">Why <code>DECIMAL(4,1)</code> for hours instead of a float type?</p>
+    <button class="quiz-option">Exact digits avoid rounding drift</button>
+    <button class="quiz-option">It indexes much faster than floats</button>
+    <button class="quiz-option">Floats reject half-hour values entirely</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p6">
+  <h2><span class="num">6</span>login.php, register.php, logout.php — authentication</h2>
+
+  <h3>The shape of a page that handles its own form</h3>
+
+  <p>login.php, register.php and profile.php all share the pattern that defines plain-PHP web apps: <strong>one file answers both halves of a conversation.</strong></p>
+
+  <ul>
+    <li><strong>GET</strong> (you open the page): the <code>if (REQUEST_METHOD === 'POST')</code> block is skipped, the HTML renders with empty/errors-free form. The page <em>displays</em>.</li>
+    <li><strong>POST</strong> (you hit Submit, the same file): the block at the top runs — validate, maybe write DB, maybe redirect. Only if validation <em>fails</em> does execution continue into the HTML, which now re-renders with errors shown and <code>$_POST</code> values echoed back.</li>
+  </ul>
+
+  <p>That's why <code>$_SERVER['REQUEST_METHOD']</code> gates everything, and why form fields print <code>value="&lt;?= e($_POST['email'] ?? '') ?&gt;"</code> — on failed submit, your typing is restored (escaped, as always, because a POST value is user data). login.php even uses it <em>before</em> the POST block exists, as its display state.</p>
+
+  <h3>login.php, top half (lines 1–31)</h3>
+
+<pre><code>require_once __DIR__ . '/helpers.php';
+
+if (is_logged_in()) { redirect('dashboard.php'); }
+
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if ($email === '' || $password === '') {
+        $error = 'Please enter both email and password.';
+    } else {
+        $stmt = db()-&gt;prepare('SELECT * FROM students WHERE email = ?');
+        $stmt-&gt;execute([$email]);
+        $student = $stmt-&gt;fetch();
+
+        if ($student &amp;&amp; password_verify($password, $student['password_hash'])) {
+            session_regenerate_id(true);
+            $_SESSION['student_id'] = (int)$student['id'];
+            $_SESSION['student_name'] = $student['full_name'];
+            redirect('dashboard.php');
+        }
+        $error = 'Invalid email or password.';
+    }
+}</code></pre>
+
+  <ul>
+    <li><strong>Reverse guard</strong>: if already logged in, don't show the form — push to dashboard. (register.php copies it.)</li>
+    <li><code>trim()</code> eats stray spaces; <code>??</code> makes a missing key null-safely default; <code>$password</code> deliberately <em>not</em> trimmed (spaces may be part of it).</li>
+    <li>The <strong>email lookup uses the index</strong> created by <code>UNIQUE email</code> — the login query is a fast <code>const</code>-type lookup, not a scan (nice schema↔code connection).</li>
+    <li><code>$student &amp;&amp; password_verify(...)</code>: short-circuit — the expensive hash check only runs if the row exists. And here's the part-5 promise kept: <a href="https://www.php.net/manual/en/function.password-verify.php">password_verify</a> recomputes the bcrypt hash from the typed password <em>using the salt embedded in the stored hash</em> (the <code>$2y$10$N9qo8uLO…</code> format carries algorithm, cost, salt, and digest in one string) and compares. The plain password was never in the database to read.</li>
+    <li><strong><code>session_regenerate_id(true)</code></strong>: at the exact moment the browser's identity upgrades from anonymous to "this student", hand it a brand-new session id (and destroy the old session file). Prevents <em>session fixation</em>: an attacker who planted a known session id before login can't ride it afterwards. (<a href="https://www.php.net/manual/en/function.session-regenerate-id.php">Manual</a>)</li>
+    <li>The two <code>$_SESSION</code> writes <strong>are</strong> the login. <code>student_name</code> is convenience for the UI; <code>student_id</code> is the credential everything else checks. <code>(int)</code> cast — the session can't be tricked into holding an array.</li>
+    <li><strong>One error message for both failure modes</strong>: "Invalid email or password" whether the email or the password was wrong. Telling the truth ("no such email") hands account enumerators a list of registered students. Generic-on-purpose.</li>
+  </ul>
+
+  <h3>register.php — validation, the uniqueness race, the insert</h3>
+
+<pre><code>$errors = [];
+$old    = fn(string $k) =&gt; e($_POST[$k] ?? '');</code></pre>
+  <p>An <strong>arrow function</strong> stored in a variable, reused throughout the form for redisplaying submitted values — the <code>e()</code> built <em>into</em> the helper so a field can't be echoed unescaped even by mistake.</p>
+
+<pre><code>$matric   = strtoupper(trim($_POST['matric_no'] ?? ''));
+…
+if ($matric === '')                             $errors['matric_no'] = 'Matric number is required.';
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email']     = 'Enter a valid email address.';
+if (strlen($password) &lt; 8)                      $errors['password']  = 'Password must be at least 8 characters.';
+if ($password !== $confirm)                     $errors['password_confirm'] = 'Passwords do not match.';</code></pre>
+  <p>Errors collected in an <strong>associative array keyed by field name</strong> (<code>$errors['email']</code>) — the form prints each under its field via <code>&lt;?php if (isset($errors['email'])): ?&gt;…&lt;?php endif; ?&gt;</code>. <code>strtoupper</code> normalises matric before anything else (CSC/2021/0123 == csc/2021/0123). <a href="https://www.php.net/manual/en/filter.filters.validate.php"><code>filter_var</code> with FILTER_VALIDATE_EMAIL</a> checks shape only — it never confirms the inbox exists, which is why the app relies on the unique-email check instead. <code>strlen($password) &lt; 8</code>: one rule, byte length.</p>
+
+<pre><code>if (!$errors) {
+    $stmt = db()-&gt;prepare('SELECT email, matric_no FROM students WHERE email = ? OR matric_no = ?');
+    $stmt-&gt;execute([$email, $matric]);
+    while ($row = $stmt-&gt;fetch()) {
+        if (strcasecmp($row['email'], $email) === 0)      $errors['email']     = 'This email is already registered.';
+        if (strcasecmp($row['matric_no'], $matric) === 0) $errors['matric_no'] = 'This matric number is already registered.';
+    }
+}</code></pre>
+  <p>One query for both possible clashes (<code>OR</code>); <code>while ($row = $stmt-&gt;fetch())</code> is the standard PDO row-cursor loop (fetch returns false past the end, stopping the loop); <a href="https://www.php.net/manual/en/function.strcasecmp.php"><code>strcasecmp</code></a> compares case-insensitively in <em>PHP</em> so the right error lands under the right field, mirroring the DB's <code>_ci</code> collation. The friendly UX layer.</p>
+
+<pre><code>if (!$errors) {
+    $stmt = db()-&gt;prepare('INSERT INTO students (matric_no, full_name, email, password_hash, institution, course_of_study)
+         VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt-&gt;execute([$matric, $fullName, $email, password_hash($password, PASSWORD_DEFAULT), $institution, $course]);
+    flash('success', 'Account created — you can now log in.');
+    redirect('login.php');
+}</code></pre>
+  <p><a href="https://www.php.net/manual/en/function.password-hash.php"><code>password_hash($password, PASSWORD_DEFAULT)</code></a>: generates a fresh random salt, runs bcrypt (the current <code>PASSWORD_DEFAULT</code>), returns the <code>$2y$10$…</code> string — <strong>this is the only place the plain password is ever referenced, and it's never stored.</strong> Then the PRG pattern: flash + redirect (part 7 names it). <strong>The race worth knowing:</strong> between the SELECT check and the INSERT, a second concurrent registration could slip past PHP — and then the <code>UNIQUE</code> key throws a PDOException, visible as an ugly 500. Belt (friendly check) and braces (the constraint): the DB is the one that's always right.</p>
+
+  <h3>logout.php — the whole cycle in three lines</h3>
+
+<pre><code>require_once __DIR__ . '/helpers.php';
+$_SESSION = [];
+session_destroy();
+redirect('login.php');</code></pre>
+
+  <p><code>$_SESSION = []</code> empties the array; <code>session_destroy()</code> wipes the server-side storage. The cookie itself isn't deleted, it simply now points at nothing. Note what it assumes: <code>require_once</code> has already started the session (config.php), so there is something to destroy. The next request to dashboard.php: session exists, no <code>student_id</code> → <code>require_login()</code> → flash + redirect to login. The machine from part 1, end to end.</p>
+
+  <div class="quiz" data-answer="0" data-why="password_verify extracts algorithm+cost+salt from the stored string, re-hashes the candidate, and compares digests. The stored value was never reversible.">
+    <p class="quiz-q">How can login check a password the database doesn't store?</p>
+    <button class="quiz-option">The hash embeds a salt for rechecking</button>
+    <button class="quiz-option">PHP keeps a decrypt key on the server</button>
+    <button class="quiz-option">Sessions cache every password once seen</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Same message for wrong-email and wrong-password: the form can't be used to discover which addresses are registered.">
+    <p class="quiz-q">Why "Invalid email or password" as one generic message?</p>
+    <button class="quiz-option">To deny attackers account-existence probes</button>
+    <button class="quiz-option">To simplify the PHP branch logic greatly</button>
+    <button class="quiz-option">To match messages users see on other sites</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The pre-login session id may be known/planted by an attacker; rotating it at the privilege jump makes that stolen id dead.">
+    <p class="quiz-q">What attack does <code>session_regenerate_id(true)</code> after login stop?</p>
+    <button class="quiz-option">Session fixation with a planted older id</button>
+    <button class="quiz-option">Cross-site request forgeries via forms</button>
+    <button class="quiz-option">Cookie theft across http to https links</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="If PHP's SELECT check loses a race, the UNIQUE constraint itself rejects the INSERT — DB enforcement beats any application check.">
+    <p class="quiz-q">Two simultaneous registrations with one email. What is the final defence?</p>
+    <button class="quiz-option">The database UNIQUE constraint rejects</button>
+    <button class="quiz-option">The duplicate-check select query above it</button>
+    <button class="quiz-option">The CSRF token will differ between them</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p7">
+  <h2><span class="num">7</span>CRUD — log_form.php, logs.php, log_delete.php, profile.php</h2>
+
+  <h3>log_form.php — one file, two modes: Create and Update</h3>
+
+<pre><code>$id    = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$entry = null;
+
+if ($id &gt; 0) {
+    $stmt = db()-&gt;prepare('SELECT * FROM log_entries WHERE id = ? AND student_id = ?');
+    $stmt-&gt;execute([$id, $student['id']]);
+    $entry = $stmt-&gt;fetch();
+    if (!$entry) { flash('error', 'Entry not found.'); redirect('logs.php'); }
+}</code></pre>
+
+  <p>The mode switch is the URL: <code>log_form.php</code> = new entry; <code>log_form.php?id=5</code> = edit entry 5. The <code>(int)</code> cast is load-bearing: <code>?id=abc</code> becomes <code>0</code> (create mode), <code>?id=5%20OR%201=1</code> becomes <code>5</code> — a scalar can never smuggle SQL. Then the most important sentence in the file: <strong><code>WHERE id = ? AND student_id = ?</code></strong>. The lookup — like every query that touches a single entry in this app — is <em>scoped to the logged-in student</em>. Editing another user's entry #5 by typing its URL is impossible by design: no row matches, "Entry not found". The pattern has a name: <a href="https://owasp.org/www-community/attacks/Insecure_Direct_Object_Reference">Insecure Direct Object Reference (IDOR)</a>, and this schema-per-query is its textbook cure. (Hands-on below — you'll try to break it.)</p>
+
+<pre><code>$entryDate   = $entry['entry_date']   ?? date('Y-m-d');
+$hoursWorked = $entry['hours_worked'] ?? 8.0;
+$workDone    = $entry['work_done']    ?? '';</code></pre>
+  <p>The defaults trick: fields start from the existing row in edit mode, or sane blanks in create mode. Note that <code>$_POST</code> handling (below) <em>overwrites</em> these, so a failed submit re-shows what you typed — one variable set feeds both the defaults and the redisplay. Clean.</p>
+
+<pre><code>if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $entryDate) || !strtotime($entryDate)) {
+    $errors['entry_date'] = 'Pick a valid date.';
+}
+if ($hoursWorked &lt; 0.5 || $hoursWorked &gt; 24)  $errors['hours_worked'] = 'Hours must be between 0.5 and 24.';
+if ($workDone === '')                         $errors['work_done']    = 'Describe what you did this day.';</code></pre>
+  <p>A <a href="https://www.php.net/manual/en/book.pcre.php">regex</a> enforces the exact shape <code>YYYY-MM-DD</code> (that's what <code>&lt;input type="date"&gt;</code> submits), <em>and</em> <code>strtotime</code> confirms it's a real calendar date — <code>2026-02-30</code> passes the pattern but fails the parse. <a href="https://www.php.net/manual/en/function.date.php">Why the double check</a>: shape is cheap and rejects garbage; <code>strtotime</code> is authoritative.</p>
+
+<pre><code>$stmt = db()-&gt;prepare(
+    'SELECT id FROM log_entries WHERE student_id = ? AND entry_date = ? AND id &lt;&gt; ?'
+);
+$stmt-&gt;execute([$student['id'], $entryDate, $id]);
+if ($stmt-&gt;fetch()) {
+    $errors['entry_date'] = 'You already logged this day — edit that entry instead.';
+}</code></pre>
+  <p>The friendly duplicate-day check, and the elegance of <code>id &lt;&gt; ?</code> ("id is not this one"): in <em>create</em> mode <code>$id</code> is 0 so no row is excluded; in <em>edit</em> mode the row being edited is excluded from the clash — saving the entry unchanged passes. This query also needs no <code>fetchColumn</code> — <code>SELECT id</code>, truthy row existence is the whole answer.</p>
+
+<pre><code>if ($id &gt; 0) {
+    $stmt = db()-&gt;prepare('UPDATE log_entries SET entry_date = ?, hours_worked = ?, work_done = ?, challenges = ?, remarks = ?
+         WHERE id = ? AND student_id = ?');
+    $stmt-&gt;execute([$entryDate, $hoursWorked, $workDone, $challenges, $remarks, $id, $student['id']]);
+    flash('success', 'Entry updated.');
+} else {
+    $stmt = db()-&gt;prepare('INSERT INTO log_entries (student_id, entry_date, hours_worked, work_done, challenges, remarks)
+         VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt-&gt;execute([$student['id'], $entryDate, $hoursWorked, $workDone, $challenges, $remarks]);
+    flash('success', 'Day logged — nice progress!');
+}
+redirect('logs.php');</code></pre>
+  <p>Both branches carry the scope guard (<code>WHERE … AND student_id = ?</code> — double protection: even if <code>$id</code> were someone else's row, the UPDATE touches zero rows) and both end in the same two moves: <code>flash()</code> then <code>redirect()</code>. That's the <a href="https://en.wikipedia.org/wiki/Post/Redirect/Get">Post/Redirect/Get pattern</a>: after any successful POST, never render — bounce to a GET page. Payoff: pressing Back or Refresh on logs.php can't resubmit the form; you get the list plus the "Day logged!" flash, every time. (The failure path deliberately skips PRG — it re-renders the form with <code>$errors</code> so your typing isn't lost.)</p>
+
+  <h3>logs.php — Read, with a LIKE search</h3>
+
+<pre><code>$q = trim($_GET['q'] ?? '');
+
+if ($q !== '') {
+    $stmt = db()-&gt;prepare(
+        'SELECT * FROM log_entries
+         WHERE student_id = ? AND (work_done LIKE ? OR challenges LIKE ? OR entry_date LIKE ?)
+         ORDER BY entry_date DESC'
+    );
+    $like = '%' . $q . '%';
+    $stmt-&gt;execute([$student['id'], $like, $like, $like . '%']);
+} else {
+    $stmt = db()-&gt;prepare('SELECT * FROM log_entries WHERE student_id = ? ORDER BY entry_date DESC');
+    $stmt-&gt;execute([$student['id']]);
+}
+$entries = $stmt-&gt;fetchAll();</code></pre>
+
+  <p>Search arrives as a URL query (<code>logs.php?q=git</code>) — that's what <code>&lt;form method="get"&gt;</code> does: it builds the query string instead of a POST body, which makes searches <strong>bookmarkable and shareable</strong>. The <code>%</code> signs are built <em>in SQL-side data, not string-concatenated SQL</em> — <code>'%' . $q . '%'</code> is a value bound to a placeholder, so wildcards are added safely around user text. Two wildcard shapes: <code>%git%</code> = "contains" for the text fields; <code>2026-07%</code> (trailing only) for dates, so typing "2026-0" matches July entries. The <code>else</code> branch is just "show everything mine, newest first" — and note the <em>one</em> difference the search adds: <code>AND (LIKE …)</code>; <code>student_id</code> scoping is constant in both paths, as always. The table below then loops <code>$entries</code> with the same constructs as the dashboard; the empty state even branches on whether <code>$q !== ''</code> to say "No matches for …" versus "Nothing logged yet".</p>
+
+  <h3>log_delete.php — never mutate on a GET</h3>
+
+<pre><code>$id = (int)($_GET['id'] ?? 0);
+$stmt = db()-&gt;prepare('SELECT * FROM log_entries WHERE id = ? AND student_id = ?');
+$stmt-&gt;execute([$id, $student['id']]);
+$entry = $stmt-&gt;fetch();
+if (!$entry) { flash('error', 'Entry not found.'); redirect('logs.php'); }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
+    $stmt = db()-&gt;prepare('DELETE FROM log_entries WHERE id = ? AND student_id = ?');
+    $stmt-&gt;execute([$id, $student['id']]);
+    flash('success', 'Entry deleted.');
+    redirect('logs.php');
+}
+// …GET falls through to the confirmation page HTML…</code></pre>
+
+  <p>Two rules encoded here. <strong>1. Confirmation before destruction:</strong> GET shows "Delete this entry?" with a preview; only POST deletes. <strong>2. Safe vs unsafe methods:</strong> browsers pre-fetch links, crawlers follow them, and a sneaky <code>&lt;img src="log_delete.php?id=5"&gt;</code> in a comment <em>would</em> fire — if deletion were a GET. Because deletion is POST-only <em>and</em> behind <code>csrf_verify()</code>, an attacker page can't forge that request either — the CSRF token would be missing, 419. This file is the single clearest demo of why CSRF matters, more than any other in the app.</p>
+
+  <p>In its HTML, one line earns study: <code>&lt;?= nl2br(e(mb_strimwidth($entry['work_done'], 0, 300, '…'))) ?&gt;</code> — read right-to-left: truncate to 300 display-widths with an ellipsis, <strong>escape</strong> for HTML, then convert newlines to <code>&lt;br&gt;</code>. The order escape-then-nl2br is mandatory: <code>nl2br</code> must run on already-escaped text, otherwise you'd feed raw user markup into the page — a neat, one-line XSS-avoidance lesson.</p>
+
+  <h3>profile.php — two forms, one page, dispatched by a hidden field</h3>
+
+<pre><code>$action = $_POST['action'] ?? '';
+
+if ($action === 'details') {
+    … validate full_name; UPDATE students SET full_name = ?, institution = ?, course_of_study = ?,
+        placement_org = ?, industry_supervisor = ? WHERE id = ? …
+    flash('success', 'Profile updated.'); redirect('profile.php');
+}
+
+if ($action === 'password') {
+    if (!password_verify($current, $student['password_hash'])) { $errors['current_password'] = …; }
+    if (strlen($new) &lt; 8) { … } if ($new !== $confirm) { … }
+    if (!$errors) { UPDATE students SET password_hash = ? WHERE id = ?; flash; redirect; }
+}</code></pre>
+
+  <p>Two <code>&lt;form&gt;</code>s on the page, each with a hidden <code>&lt;input name="action" value="details|password"&gt;</code> — the server branches on it. It's the <em>same file</em> both forms submit to, so <code>$action</code> is how one POST endpoint serves two operations. Notice the details form leaves <code>email</code> and <code>matric_no</code> out of its UPDATE entirely — immutable by omission; and the matric is displayed in a <code>disabled</code> input (browser-greyed, and a disabled field is never submitted at all). The password branch starts by verifying the current password — change-your-password must prove-you're-you — and rehashes with a fresh <code>password_hash</code>.</p>
+
+  <div class="checkpoint"><strong>Hands-on checkpoint (break it, ethically):</strong> register a <em>second</em> student account in another browser profile. Log in as student B, note their entry id from an edit URL (<code>log_form.php?id=9</code>), then paste that URL into student A's session. Watch what <code>WHERE id = ? AND student_id = ?</code> says on your behalf. Same test with <code>log_delete.php?id=9</code>.</div>
+
+  <div class="quiz" data-answer="0" data-why="Every single-entry query carries AND student_id = ? — a foreign row simply never matches. Access control as a clause, on every path.">
+    <p class="quiz-q">What stops student A editing student B's entry via ?id= links?</p>
+    <button class="quiz-option">The scope clause added to every query</button>
+    <button class="quiz-option">The integer cast applied to id on arrival</button>
+    <button class="quiz-option">The CSRF token checked on every load</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="PRG: a successful POST answers with a redirect to a GET page. Refresh resubmits a harmless GET — no duplicate INSERT, and the flash proves it happened.">
+    <p class="quiz-q">After a successful save, why redirect() instead of rendering directly?</p>
+    <button class="quiz-option">Refresh then cannot resubmit the post</button>
+    <button class="quiz-option">Rendering needs a fresh database read</button>
+    <button class="quiz-option">Post responses skip the flash system entirely</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Wildcards ride in as bound data, never as concatenated SQL text — placeholder discipline again, and search stays injection-proof.">
+    <p class="quiz-q">In the search, why is <code>'%' . $q . '%'</code> safe but concatenating into the SQL is not?</p>
+    <button class="quiz-option">It is a bound value, never query syntax</button>
+    <button class="quiz-option">Percents neutralise all injection payload</button>
+    <button class="quiz-option">Trim already removed any quote characters</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Preloaders and hostile img tags fire GETs without the user; destructive actions must be POST (plus CSRF token), exactly as here.">
+    <p class="quiz-q">Why must deletion only ever happen on POST, never GET?</p>
+    <button class="quiz-option">GETs get fired without any user consent</button>
+    <button class="quiz-option">GET bodies cannot carry the record id</button>
+    <button class="quiz-option">PHP silently blocks deletes from GETs</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="nl2br on escaped text adds only its own generated tags. Reverse the order and user-supplied markup gets injected.">
+    <p class="quiz-q">The delete preview escapes <em>then</em> nl2brs. Why can't that order flip?</p>
+    <button class="quiz-option">Escaping must precede new tag insertion</button>
+    <button class="quiz-option">nl2br cannot process any escaped content</button>
+    <button class="quiz-option">Browsers ignore line breaks otherwise entirely</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p8">
+  <h2><span class="num">8</span>dashboard.php — stats, array functions, the pure-CSS chart</h2>
+
+  <p>The most compute-heavy page: four stat cards, a bar chart, a recent-entries table, built from three queries and some array gymnastics — and <em>zero</em> charting JavaScript.</p>
+
+<pre><code>$stmt = db()-&gt;prepare(
+    'SELECT COUNT(*)                    AS entries,
+            COALESCE(SUM(hours_worked), 0) AS hours,
+            MIN(entry_date)             AS first_day,
+            MAX(entry_date)             AS last_day
+     FROM log_entries WHERE student_id = ?'
+);
+$stmt-&gt;execute([$student['id']]);
+$stats = $stmt-&gt;fetch();</code></pre>
+
+  <p><strong>Four aggregates in one row</strong> — COUNT, SUM, MIN, MAX each collapse the student's rows to one value; <code>AS</code> names the result column so PHP can say <code>$stats['entries']</code>. <a href="https://dev.mysql.com/doc/refman/8.0/en/aggregate-functions.html">Aggregate functions</a>: <code>COALESCE(SUM(...), 0)</code> exists because <code>SUM</code> over <em>zero rows</em> is NULL — for a brand-new student the function must not print blank; <code>COALESCE(x, 0)</code> says "if NULL, use 0". One query, one row, four numbers: this is what "push computation into the database" looks like — you don't SELECT all entries and count them in PHP when MySQL already has an index that knows.</p>
+
+<pre><code>$entryCount  = (int)$stats['entries'];
+$totalHours  = (float)$stats['hours'];
+$avgHours    = $entryCount &gt; 0 ? $totalHours / $entryCount : 0.0;
+$weekCount   = 0;
+if ($stats['first_day'] &amp;&amp; $stats['last_day']) {
+    $weekCount = (int)floor((strtotime((string)$stats['last_day']) - strtotime((string)$stats['first_day'])) / 604800) + 1;
+}</code></pre>
+
+  <p>The casts are not decoration: PDO returns <em>everything as strings</em> (so does MySQL over its wire protocol) — <code>(int)"12"</code> is a real integer, safe for arithmetic and formatting. <code>$entryCount &gt; 0 ? … : 0.0</code>: divide-by-zero guard, same instinct as COALESCE but PHP-side. Week span: same 604,800-seconds division as <code>siwes_week_number</code>, plus 1 because a student on their first day has spanned "week 1", not week 0; the <code>&amp;&amp;</code> guard skips the maths for empty logs.</p>
+
+<pre><code>$stmt = db()-&gt;prepare('SELECT entry_date, hours_worked FROM log_entries
+     WHERE student_id = ? ORDER BY entry_date DESC LIMIT 10');
+$stmt-&gt;execute([$student['id']]);
+$chartRows = array_reverse($stmt-&gt;fetchAll());
+
+$chartLabels = array_map(fn($r) =&gt; date('d M', strtotime($r['entry_date'])), $chartRows);
+$chartData   = array_map(fn($r) =&gt; (float)$r['hours_worked'], $chartRows);</code></pre>
+
+  <p>SQL says "give me the 10 newest" (<code>ORDER BY … DESC LIMIT 10</code> — <code>uq_student_day</code>'s index makes that fast); <a href="https://www.php.net/manual/en/function.array-reverse.php">array_reverse</a> puts them oldest→newest for the left-to-right chart. Two <a href="https://www.php.net/manual/en/function.array-map.php">array_map</a> calls with <code>fn() =&gt;</code> arrow functions then split one array of rows into two parallel arrays: labels ("03 Sep") and numbers. The functional idiom: <em>transform every element, preserve position.</em></p>
+
+<pre><code>&lt;?php
+$max = max($chartData) ?: 1;
+foreach ($chartData as $i =&gt; $val):
+    $pct = round($val / $max * 100);
+?&gt;
+&lt;div class="chart__col" title="… hours"&gt;
+    &lt;span class="chart__val"&gt;&lt;?= (float)$val ?&gt;&lt;/span&gt;
+    &lt;div class="chart__track"&gt;&lt;div class="chart__bar" style="--h: &lt;?= $pct ?&gt;%"&gt;&lt;/div&gt;&lt;/div>
+    &lt;span class="chart__label"&gt;&lt;?= e($chartLabels[$i]) ?&gt;&lt;/span&gt;
+&lt;/div&gt;
+&lt;?php endforeach; ?&gt;</code></pre>
+
+  <p>The chart, explained fully in the HTML it prints. <code>max($chartData) ?: 1</code>: the tallest bar becomes the 100% reference (the elvis guards an all-zero — or empty — set from dividing by zero). Each bar's height is <em>relative to the max</em>, as a percentage, and the only place CSS appears in this course: <code>style="--h: 88%"</code> sets a <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties">custom property</a> on the element; <code>assets/css/style.css</code> has <code>.chart__bar { height: var(--h); }</code> — PHP computes the data, CSS draws the bar. No canvas, no library, just math → percentage → a CSS variable per bar. (The <code>title</code> attribute is a native browser tooltip — accessibility for free; the <code>aria-label</code> a few lines up describes the whole chart to screen readers, built by <code>implode(', ', array_map(fn($l, $v) =&gt; …, $chartLabels, $chartData))</code>: array_map can walk <em>two arrays at once</em>, and implode joins with commas.)</p>
+
+<pre><code>&lt;h2&gt;Hello, &lt;?= e(explode(' ', trim((string)$student['full_name']))[0]) ?&gt;&lt;/h2&gt;</code></pre>
+  <p>The greeting. <code>explode(' ', $name)</code> splits on spaces into an array; <code>[0]</code> is the first element — the first name. Note the <code>[0]</code> applied <em>directly to a function call</em> (legal since PHP 5.4): <code>explode(…)[0]</code>.</p>
+
+<pre><code>&lt;td&gt;
+    &lt;strong&gt;&lt;?= e(day_label($row['entry_date'])) ?&gt;&lt;/strong&gt;
+    &lt;small class="muted block"&gt;Week &lt;?= siwes_week_number($student, $row['entry_date']) ?&gt;&lt;/small&gt;
+&lt;/td&gt;</code></pre>
+  <p>The recent-entries table loops the third query's <code>LIMIT 5</code> rows with <code>foreach … endforeach</code>. Here, part 3's warning pays out: <code>siwes_week_number()</code> fires its <code>MIN(entry_date)</code> query <em>inside the loop, per row</em> — five rows, five extra queries. Correct, readable, and the exact shape of an N+1 you'd fix by computing <code>$first</code> once above the loop. Knowing the fix before you need it is viva-level.</p>
+
+  <p>And the page's last trick: singular/plural UI text without any special feature — <code>Day&lt;?= $entryCount === 1 ? '' : 's' ?&gt; logged</code>. Ternaries, everywhere, inline.</p>
+
+  <div class="quiz" data-answer="0" data-why="SUM over zero rows yields NULL in SQL; COALESCE maps that one NULL into a printable 0 for a brand-new student.">
+    <p class="quiz-q">What would a new student's total-hours card print without COALESCE?</p>
+    <button class="quiz-option">Nothing — sum of nothing is NULL</button>
+    <button class="quiz-option">Zero — sums always start at zero</button>
+    <button class="quiz-option">An error page from the failed query itself</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The DB collapses millions of potential PHP iterations into one row of numbers, using the index. Push work down where the data lives.">
+    <p class="quiz-q">Why COUNT/SUM in SQL instead of fetching rows and adding them in PHP?</p>
+    <button class="quiz-option">The database computes aggregates closer</button>
+    <button class="quiz-option">PHP cannot add decimal numbers up easily</button>
+    <button class="quiz-option">Prepared statements forbid returning every row</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="array_map transforms each element positionally — rows become labels and rows become numbers, keeping order aligned.">
+    <p class="quiz-q">What job are the two <code>array_map(fn($r) =&gt; …)</code> lines doing?</p>
+    <button class="quiz-option">Projecting rows into parallel arrays</button>
+    <button class="quiz-option">Filtering out the rows with no values</button>
+    <button class="quiz-option">Sorting rows by date then hours descending</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="--h is a custom property read by .chart__bar's height: var(--h). PHP supplies numbers; CSS renders geometry.">
+    <p class="quiz-q">How does <code>style="--h: &lt;?= $pct ?&gt;%"</code> produce a bar height?</p>
+    <button class="quiz-option">CSS reads it via var() for height</button>
+    <button class="quiz-option">JavaScript animates the property later</button>
+    <button class="quiz-option">It is a valid CSS height directly</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p9">
+  <h2><span class="num">9</span>seed.php &amp; router.php — the support files</h2>
+
+  <h3>seed.php — the app's only try/catch</h3>
+
+  <p>Remember config.php's <code>ERRMODE_EXCEPTION</code>: a PDO error now <em>throws</em>. seed.php is the one file that catches it:</p>
+
+<pre><code>try {
+    $pdo = db();
+    $pdo-&gt;exec('DELETE FROM log_entries');
+    $pdo-&gt;exec('DELETE FROM students');
+    …
+    $stmt = $pdo-&gt;prepare('INSERT INTO students (…) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt-&gt;execute([…, password_hash('demo1234', PASSWORD_DEFAULT), …]);
+    $studentId = (int)$pdo-&gt;lastInsertId();
+
+    $weeks = [ [ ['2026-07-06', 8.0, "Set up the dev environment…", 'Getting used to…'], … ], … ];
+
+    $stmt = $pdo-&gt;prepare('INSERT INTO log_entries (student_id, entry_date, hours_worked, work_done, challenges)
+         VALUES (?, ?, ?, ?, ?)');
+    foreach ($weeks as $week) {
+        foreach ($week as $day) {
+            [$date, $hours, $work, $challenges] = array_pad($day, 4, null);
+            $stmt-&gt;execute([$studentId, $date, $hours, $work, $challenges]);
+        }
+    }
+    echo '&lt;h2&gt;✅ Demo data created&lt;/h2&gt;';
+} catch (Throwable $ex) {
+    http_response_code(500);
+    echo 'Seeding failed: ' . htmlspecialchars($ex-&gt;getMessage());
+}</code></pre>
+
+  <ul>
+    <li><code>exec()</code>: the simplest PDO method — run one static statement, no parameters, so no placeholders needed. Safe <em>here</em> because the SQL is literally fixed; elsewhere the app always prepares.</li>
+    <li><code>lastInsertId()</code>: MySQL reports the AUTO_INCREMENT id it assigned (part 5's connection) — the FK needs it on every entry.</li>
+    <li><code>$weeks</code> is an <strong>array of arrays of arrays</strong>: five weeks, each of five days, each day a 3- or 4-element list. The inner loop's <a href="https://www.php.net/manual/en/function.list.php"><code>[$date, $hours, $work, $challenges] =</code></a> is <em>list destructuring</em> — unpack a positional array into named variables. <code>array_pad($day, 4, null)</code> pads short days to 4 elements so the destructuring never errors (days without challenges).</li>
+    <li><strong>One prepare, 25 executes</strong>: the statement compiles once; each execute sends fresh bound data. This is the efficiency the prepare step buys.</li>
+    <li><code>catch (Throwable $ex)</code>: catch any PHP error <em>or</em> exception (Throwable is the root of both trees — <a href="https://www.php.net/manual/en/class.throwable.php">Manual</a>); 500 status + <code>htmlspecialchars($ex-&gt;getMessage())</code> — even error text is escaped; the file itself instructs: delete it after seeding, because it's a public "re-create a demo password" button if left on a server.</li>
+  </ul>
+
+  <h3>router.php — only used by <code>php -S</code>, not XAMPP</h3>
+
+<pre><code>$uri  = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/');
+$file = __DIR__ . $uri;
+
+if ($uri !== '/' &amp;&amp; file_exists($file) &amp;&amp; !is_dir($file)) {
+    return false;                       // 1. serve static files ourselves
+}
+if ($uri === '/' || $uri === '') {
+    require __DIR__ . (is_logged_in() ? '/dashboard.php' : '/login.php');
+    return true;                        // 2. root routes by auth state
+}
+$candidate = __DIR__ . rtrim($uri, '/') . '.php';
+if (file_exists($candidate)) {
+    require $candidate;
+    return true;                        // 3. /logs  → logs.php
+}
+http_response_code(404);
+echo '&lt;h1&gt;404&lt;/h1&gt;…';                    // 4. anything else
+return true;</code></pre>
+
+  <p>XAMPP ignores this file entirely — it exists because <code>php -S localhost:8000 router.php</code> gives you a no-Apache dev server, and when handed a router script, that server's contract is: "run my file; if it <code>return false</code>s, you (the server) handle the request normally." Hence the four numbered branches: static assets (css/js) return false so PHP's built-in server ships them untouched; <code>/</code> dispatches by login state; pretty paths gain a <code>.php</code> suffix and exist-check; and the default is a real 404 status. <code>parse_url(…, PHP_URL_PATH)</code> peels off the <code>?q=…</code> query string; <code>urldecode</code> restores <code>%20</code>→space (the folder name has one); <code>rtrim($uri, '/')</code> drops trailing slashes. It also <em>requires helpers.php</em> — the only consumer outside the app pages, because branch 2 needs <code>is_logged_in()</code>. Under Apache, you'll note, you've always typed <code>logs.php</code> explicitly — this file is precisely what Apache's simpler rules don't give you.</p>
+
+  <div class="quiz" data-answer="0" data-why="array_pad stretches short 3-element days to 4 with null, so the 4-variable destructure never hits a missing index.">
+    <p class="quiz-q">Why does seed.php run <code>array_pad($day, 4, null)</code> before destructuring?</p>
+    <button class="quiz-option">Short days need a fourth filled slot</button>
+    <button class="quiz-option">Execute rejects any array of less than four</button>
+    <button class="quiz-option">Nulls pad ids for the foreign key column</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The prepare step parses/compiles the SQL server-side once; each execute only ships new bound values.">
+    <p class="quiz-q">Why prepare once then execute 25 times in the seeding loop?</p>
+    <button class="quiz-option">Compiling the statement happens once</button>
+    <button class="quiz-option">PDO cannot prepare two same-shaped queries twice</button>
+    <button class="quiz-option">Reusing one statement also keeps sessions</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Returning false hands the request back to php -S's own static-file handling — the router only decides which PHP page runs, not the whole server.">
+    <p class="quiz-q">In router.php, what does <code>return false;</code> achieve for <code>assets/css/style.css</code>?</p>
+    <button class="quiz-option">The built-in server ships the file itself</button>
+    <button class="quiz-option">The request gets a silent 404 status code</button>
+    <button class="quiz-option">PHP compresses and caches the asset now</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p10">
+  <h2><span class="num">10</span>The security map — five defences, and the attacks they stop</h2>
+
+  <p>Every line of "why" so far assembles into this table. This is the page to revisit the night before a viva.</p>
+
+  <table>
+    <tr><th>Attack</th><th>What an attacker tries</th><th>Where the app blocks it</th></tr>
+    <tr>
+      <td><strong>SQL injection</strong></td>
+      <td>Type <code>' OR 1=1 --</code> in the login email to twist the query into returning the wrong row (or worse, <code>; DROP TABLE</code>).</td>
+      <td>Every query: <code>prepare()</code> + <code>execute([values])</code> — the <code>?</code> placeholder means data never enters the SQL grammar. <code>EMULATE_PREPARES =&gt; false</code> makes it MySQL's real engine enforcing this, not PHP string tricks. (part 3)</td>
+    </tr>
+    <tr>
+      <td><strong>XSS</strong> (cross-site scripting)</td>
+      <td>Store <code>&lt;script&gt;fetch(evil)&lt;/script&gt;</code> in a log's work_done, waiting for a viewer's browser to run it.</td>
+      <td><code>e()</code> = htmlspecialchars on <em>every output</em> — the text renders as visible gibberish, never as markup. <code>ENT_QUOTES</code> closes the attribute-breakout hole. <code>trim</code>/<code>filter_var</code> narrow inputs but aren't the defence. (part 3)</td>
+    </tr>
+    <tr>
+      <td><strong>CSRF</strong></td>
+      <td>A hostile page submits a hidden delete/add form to your app using the visitor's unguessable-but-automatic session cookie.</td>
+      <td><code>csrf_field()</code> embeds a session-bound random token in every form; <code>csrf_verify()</code> rejects mismatched POSTs with 419 before any work. An external page cannot read the token, so cannot forge the form. Backup: <code>samesite=Lax</code> cookie. (parts 2, 3)</td>
+    </tr>
+    <tr>
+      <td><strong>IDOR</strong> (insecure direct object reference)</td>
+      <td>Change <code>?id=5</code> to <code>?id=9</code> to open or delete <em>someone else's</em> entry.</td>
+      <td>Single-entry queries always carry <code>AND student_id = ?</code> (and <code>WHERE id</code>-scoped on writes) — foreign rows don't match, "Entry not found". Break it yourself in part 7's checkpoint. (part 7)</td>
+    </tr>
+    <tr>
+      <td><strong>Session theft / fixation</strong></td>
+      <td>Sniff the session cookie, or plant a known session id before login to ride it after.</td>
+      <td><code>httponly</code> cookie (script can't read it), and <code>session_regenerate_id(true)</code> at login rotates the id the instant it becomes valuable. Logout wipes the store. (parts 2, 6)</td>
+    </tr>
+  </table>
+
+  <p>Plus three "policy" defences worth naming: passwords stored only as salted bcrypt (parts 5–6); one generic login error to deny enumeration; and deletion POST-only so GET-followers (crawlers, pre-fetchers, malicious <code>&lt;img&gt;</code> tags) can't mutate state.</p>
+
+  <div class="quiz" data-answer="0" data-why="The browser sends the session cookie automatically on any same-site form post — CSRF's whole trick. The token can't be read cross-origin, so the forged form lacks it.">
+    <p class="quiz-q">CSRF exploits one fact about cookies. Which?</p>
+    <button class="quiz-option">Browsers attach session cookies automatically</button>
+    <button class="quiz-option">Cookies survive past the session end sometimes</button>
+    <button class="quiz-option">Hidden fields can store values without forms</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Placeholder values are bound as data after the SQL compiles; a quote inside them is just a character. No input can change the query's structure.">
+    <p class="quiz-q">Why does <code>' OR 1=1 --</code> typed into the login email do nothing?</p>
+    <button class="quiz-option">It arrives as data after query compilation</button>
+    <button class="quiz-option">Trim removes the dashes and the quotes both</button>
+    <button class="quiz-option">MySQL simply never parses double dashes at all</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="e() converts &lt; &gt; &amp; &quot; to entities — browser sees text, not tags. The DB row stays original; only rendering is neutralised.">
+    <p class="quiz-q">A stored log contains <code>&lt;script&gt;…&lt;/script&gt;</code>. What does the viewer see?</p>
+    <button class="quiz-option">The literal tag text, displayed as characters</button>
+    <button class="quiz-option">Nothing at all — htmlspecialchars deletes it</button>
+    <button class="quiz-option">The script, but sandboxed safely by browsers</button>
+  </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p11">
+  <h2><span class="num">11</span>Viva drill — 14 questions, with model answers</h2>
+
+  <p>Cover each answer before reading it; answer out loud first. These are the questions an examiner who opens this folder will ask.</p>
+
+  <details><summary>1. Walk me through what happens when I load dashboard.php.</summary><p>Apache hands the file to PHP. Line 1–2: <code>require_once helpers.php</code> → runs config.php (constants, <code>session_start()</code> loads my session; <code>$_SESSION['student_id']</code> proves I'm logged in) and icons.php. <code>require_login()</code> checks the session; passes. <code>current_student()</code> (cached) runs a PK lookup. Three more queries: the aggregate stats row, the last 10 dates, the 5 recent entries. PHP then interleaves computed values and <code>e()</code>-escaped data with HTML as it prints; the partials supply the shell. Output buffer becomes the response. The file, and all its memory, cease to exist.</p></details>
+
+  <details><summary>2. Prepared statements — what are they and why every query here uses one?</summary><p>SQL structure and user values travel separately: <code>prepare()</code> sends the grammar with <code>?</code>s (MySQL parses it immediately), <code>execute()</code> sends values typed as data. Values can never re-enter the parse, so injection is structurally impossible — which beats any escape routine as a strategy. <code>db()</code> sets <code>EMULATE_PREPARES=false</code> so it's MySQL doing this, not PHP faking it with quotes.</p></details>
+
+  <details><summary>3. Where is the CSRF token stored, and what proves it?</summary><p>Session (<em>server</em> side, in a file keyed to the cookie) and inside each form as a hidden field (<em>browser</em> side). On POST, <code>csrf_verify()</code> compares form value vs session value with <code>hash_equals()</code> (constant-time). Only this browser knows both halves — an external site's form can carry the user's automatic cookie but can never read the session's token, so its submission dies with 419.</p></details>
+
+  <details><summary>4. Password security: what's in the database, and what happens at login?</summary><p>60-character bcrypt strings: algorithm tag + cost (2^10 work) + random 16-byte salt + digest, all in one value, one row — <code>register.php</code>'s <code>password_hash()</code>. At login <code>password_verify()</code> re-runs bcrypt on the typed password with the stored salt and compares digests — the plain password is never stored or recovered. The salt makes identical passwords hash differently; the cost makes brute force ~0.1s/guess instead of ~0.000001s.</p></details>
+
+  <details><summary>5. One entry per day — where is it enforced and why twice?</summary><p>Database: <code>UNIQUE KEY uq_student_day (student_id, entry_date)</code> — absolute, race-proof. PHP: the <code>SELECT … id &lt;&gt; ?</code> check in log_form.php — friendly: turns a constraint error into a per-field message naming the date. The PHP check can't be the security boundary (TOCTOU race between its SELECT and INSERT); the constraint can. Belt and braces.</p></details>
+
+  <details><summary>6. What's <code>$_SESSION</code> technically?</summary><p>An ordinary array in the running script, populated at <code>session_start()</code> from a server file (<code>sess_&lt;id&gt;</code>) whose name came from the visitor's <code>PHPSESSID</code> cookie, and re-written at script end. It's a disk-backed mailbox between two separate executions of two different files — which is how logout can affect the <em>next</em> request's <code>is_logged_in()</code>, and how flash messages survive redirects.</p></details>
+
+  <details><summary>7. How does one file serve both "new entry" and "edit entry"?</summary><p>Presence of <code>?id=</code>: <code>$id = (int)$_GET['id'] ?? 0;</code>; <code>$id &gt; 0</code> triggers a scoped SELECT whose row supplies form defaults (with <code>??</code> fallbacks for create mode); the title, submit-label, and POST branch (UPDATE vs INSERT) all check <code>$id</code>. A single CRUD form, two modes.</p></details>
+
+  <details><summary>8. What is the Post/Redirect/Get pattern and where does the app use it?</summary><p>Every successful POST (login, register, save, delete) ends with <code>redirect()</code> to a GET page instead of rendering — so refresh resubmits nothing, and the confirmation is a session-riding <code>flash()</code> consumed by layout-top.php. Failed validations deliberately <em>don't</em> redirect — they re-render the form with <code>$errors</code> and echoed values.</p></details>
+
+  <details><summary>9. Why can <code>&lt;?=</code> be everywhere but <code>header()</code> only at file tops?</summary><p><code>&lt;?=</code> appends to the response <em>body</em>; <code>header()</code> appends to the response <em>head</em>, and the head must already be sent before the first body byte. PHP buffers headers until output starts — <code>redirect()</code> calls therefore must precede any HTML in a file (the reason the app's PHP logic sits above its markup).</p></details>
+
+  <details><summary>10. What's an N+1 query and where does it lurk here?</summary><p>One query for the rows, then one more per row. <code>siwes_week_number()</code> runs <code>SELECT MIN(entry_date) …</code> <em>per rendered row</em> on dashboard and logs — the recent list costs 1 + 5. The fix: compute MIN once before the loop (or cache). Harmless at this scale, the first fix at scale.</p></details>
+
+  <details><summary>11. Why are there only two tables, and how does the app draw "a student's entries"?</summary><p>Relational: <code>log_entries.student_id</code> is the FK; "their" = <code>WHERE student_id = ?</code>, bound from <code>$_SESSION</code>. Normalisation: names once, not per-entry. The composite UNIQUE both enforces the daily rule and indexes the dominant query path. The FK guarantees integrity from the other direction.</p></details>
+
+  <details><summary>12. Why does <code>fetch()</code> sometimes mean false, sometimes a row with nulls?</summary><p>Zero rows → <code>false</code> (that's why <code>if (!$student)</code> works after login). Rows exist but nullable columns empty → array with <code>null</code> values. Hence the app's two idioms: <code>?: null</code>/<code>if (!$entry)</code> for <em>row existence</em>, and <code>?? 'default'</code>/<code>?: 'Not set'</code> for <em>empty fields</em>. Two different absences.</p></details>
+
+  <details><summary>13. Where could this app improve if it went to production?</summary><p>A good viva answer is layered: real DB user with password, no <code>root</code>; require login-over-HTTPS (secure cookie flag); rate-limit the login form (bcrypt cost per attempt is partial help); replace the register.php "email exists" message with a neutral one (it currently confirms accounts — a deliberate trade-off for this audience); fix seed.php deletion; the N+1; logging of PDO exceptions instead of raw 500s; a CSRF edge-case: tokens never rotate (acceptable, but worth naming). Showing you know the app's compromises <em>and</em> their reasons is the point.</p></details>
+
+  <details><summary>14. Why PHP and not a framework?</summary><p>Deliberate for this project: every mechanism visible. A framework would hide exactly the things examined here — sessions in middleware, CSRF in a template tag, PDO in an ORM. No Composer means <code>require_once</code> is the dependency system, and the 121-line helpers.php is a 20,000-word explanation of what Laravel does with <code>Artisan make:auth</code>.</p></details>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p12">
+  <h2><span class="num">12</span>Final exam — twelve mixed questions, from memory only</h2>
+
+  <p>Interleaved across the whole course — the mix <em>is</em> the difficulty. Score first tries honestly; then paste any misses to me and we drill them.</p>
+
+  <div class="quiz" data-answer="0" data-why="fetch() returns false for zero rows — both lookup sites test that exact signal before trusting a row.">
+    <p class="quiz-q">PDO's <code>fetch()</code> with no matching row gives you what?</p>
+    <button class="quiz-option">False, not null and not an empty array</button>
+    <button class="quiz-option">Null, silently like the missing columns do</button>
+    <button class="quiz-option">An empty array, zero keys inside</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The (int) cast turns 'abc' into 0 → create mode; a scalar string could never reach SQL anyway, but the cast makes id provably an integer.">
+    <p class="quiz-q">Someone hits <code>log_form.php?id=abc</code>. What happens?</p>
+    <button class="quiz-option">Casts to zero, so it opens create mode instead</button>
+    <button class="quiz-option">Throws an error, the strict cast rejects all letters</button>
+    <button class="quiz-option">Passes through to SQL, enabling injection there</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="$old('matric_no') is an arrow function (register.php:9) — fn(string $k) => e($_POST[$k] ?? '').">
+    <p class="quiz-q">In register.php's form, what is <code>$old('email')</code>?</p>
+    <button class="quiz-option">An arrow function call, echoing safely</button>
+    <button class="quiz-option">A session lookup of what the email was before</button>
+    <button class="quiz-option">A database read of the old stored value now</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="config.php sets ERRMODE_EXCEPTION: PDO throws instead of returning false — seed.php's try/catch depends on that one option.">
+    <p class="quiz-q">A query fails. Why does the rest of the page not just quietly continue?</p>
+    <button class="quiz-option">ERRMODE_EXCEPTION throws it up loudly</button>
+    <button class="quiz-option">APACHE kills any PHP script on failure too</button>
+    <button class="quiz-option">PDO retries each failed statement automatically</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The 404 comes from router.php's last branch: http_response_code(404) + a tiny echo — and only under php -S. Under Apache, this file never runs and Apache 404s unknown URLs itself.">
+    <p class="quiz-q">Hit <code>http://localhost:8000/whatever</code> under php -S. Who says 404?</p>
+    <button class="quiz-option">router.php, after its .php candidate fails to exist</button>
+    <button class="quiz-option">helpers.php, through its require_login gate function</button>
+    <button class="quiz-option">Apache, from its own configured error document</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="require runs in caller scope (part 4): variables set in the page above are visible inside layout-top.php — the contract of $page_title/$active.">
+    <p class="quiz-q">Why must <code>$active = 'logs';</code> appear above the partial's require?</p>
+    <button class="quiz-option">Required files see the requiring scope's variables</button>
+    <button class="quiz-option">The partial exports its variables to each page</button>
+    <button class="quiz-option">Sessions carry those settings between each load</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="The 60-char bcrypt string: $2y$10$ + 22-char salt + 31-char digest. The salt lives inside the stored hash — that's how verify re-derives without extra columns.">
+    <p class="quiz-q">Where does the salt used by password_verify() come from?</p>
+    <button class="quiz-option">Inside the stored hash string itself</button>
+    <button class="quiz-option">From the sessions data per matching user</button>
+    <button class="quiz-option">A separate salt column of the students table</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="uq_student_day(student_id, entry_date): its leftmost column is student_id, so 'WHERE student_id = ? ORDER BY entry_date' walks the index — fast list, fast DESC.">
+    <p class="quiz-q">Which schema line makes 'my newest 10' queries fast?</p>
+    <button class="quiz-option">The unique day-key composite index ordering</button>
+    <button class="quiz-option">The auto-increment integer primary key itself</button>
+    <button class="quiz-option">The foreign key with its cascade setting</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="flash('error') in layout-top is get mode: read + unset. It was written by require_login() during a prior request — carried in $_SESSION across the redirect.">
+    <p class="quiz-q">The error message you saw at login after require_login() — how did it cross the redirect?</p>
+    <button class="quiz-option">It rode in the session, consumed once there</button>
+    <button class="quiz-option">It travelled as a query string parameter</button>
+    <button class="quiz-option">It stayed alive in a static helper variable</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="__DIR__ never ends with a path separator, so the code supplies the '/' — gluing them directly would produce '…\siwes trackerhelpers.php'.">
+    <p class="quiz-q">Why <code>__DIR__ . '/helpers.php'</code> with a leading slash on the file part?</p>
+    <button class="quiz-option">__DIR__ never ends with a separator itself</button>
+    <button class="quiz-option">Leading slashes work for root-level files too</button>
+    <button class="quiz-option">require refuses backslashes inside all paths</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="Belt-and-braces: the earlier SELECT gave the friendly error, but the UPDATE itself re-checks. A write scoped to the session's student_id can touch at most one's own rows, whatever happened before.">
+    <p class="quiz-q">In the UPDATE, why does <code>WHERE id = ? AND student_id = ?</code> repeat the guard?</p>
+    <button class="quiz-option">The write re-scopes, not just the read before</button>
+    <button class="quiz-option">The first guard ran against a different database</button>
+    <button class="quiz-option">UPDATE statements reject a single condition entirely</button>
+  </div>
+
+  <div class="quiz" data-answer="0" data-why="e(APP_NAME) — APP_NAME is the developer's own constant; escaping constants is the uniform 'every output goes through e()' habit. The < ?= is an echo tag; require_once is at line 13; the file does not end with ?>; and it reads $page_title from scope.">
+    <p class="quiz-q">Which of these is TRUE about partials/layout-top.php?</p>
+    <button class="quiz-option">It consumes both flashes into local variables</button>
+    <button class="quiz-option">It closes the page by printing the footer tags</button>
+    <button class="quiz-option">It defines $navItems only when logged out today</button>
+  </div>
+
+  <div class="note"><strong>How did you do?</strong> 10+ first-try: you're viva-ready — ask me for a mock defence and I'll interrupt your answers like a real examiner. 6–9: name the misses, we build a one-page drill for them. Under 6: normal — the material is dense; we start a spaced-review plan from tomorrow's session. Either way, paste your score.</div>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="part" id="p13">
+  <h2><span class="num">13</span>Primary sources &amp; next steps</h2>
+
+  <p>The high-trust readings behind this document, in the order they'd help you:</p>
+  <ul>
+    <li><a href="https://www.php.net/manual/en/intro-whatis.php">PHP Manual — What is PHP?</a> — the 5-minute version of part 1, from the horse's mouth.</li>
+    <li><a href="https://www.php.net/manual/en/book.pdo.php">PHP Manual — PDO</a> — read the user notes on prepare/execute; part 3 expanded.</li>
+    <li><a href="https://www.php.net/manual/en/features.sessions.php">PHP Manual — Sessions</a> — part 2 and the $_SESSION mechanics, deeper.</li>
+    <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html">OWASP — CSRF Prevention Cheat Sheet</a> — part 10's third row, canonical.</li>
+    <li><a href="https://phptherightway.com/">PHP: The Right Way</a> — the wider context for every "why would anyone write it this way" you've had.</li>
+  </ul>
+
+  <p><strong>After this document:</strong> the references folder keeps <a href="../reference/file-map.html">the file map</a> and <a href="../reference/php-glossary.html">the glossary</a> — your look-up tables when a line goes rusty. For real retention, return in 2–3 days and take the part-12 exam cold (spacing turns fluency into storage), and use <a href="https://www.reddit.com/r/PHPhelp/">r/PHPhelp</a> or Stack Overflow when a question outgrows me.</p>
+  </div>
+
+  <div class="ask-agent"><strong>Anything in here that felt hand-wavy?</strong> Ask me — "what actually is bcrypt's cost factor?", "show me the sess_ file on my machine", "why <code>&lt;&gt;</code> instead of <code>!=</code>?". Every good question reorganises what you know.</div>
+
+  <div class="lesson-nav">
+    <span>References: <a href="../reference/php-glossary.html">PHP glossary</a> · <a href="../reference/file-map.html">file map</a></span>
+    <span>This is the course's single lesson — <a href="#p1">back to top</a></span>
+  </div>
+
+</div>
+<script src="../assets/teach/quiz.js"></script>
+</body>
+</html>

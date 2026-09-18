@@ -1,0 +1,464 @@
+<title>SIWES Tracker — Codebase Analysis</title>
+<style>
+  :root {
+    --ink: #1c2b33;
+    --ink-muted: #5b7280;
+    --ground: #f7f9fa;
+    --surface: #ffffff;
+    --line: #dde7ec;
+    --accent: #0e7490;
+    --accent-soft: #e0f4f9;
+    --code-bg: #f0f5f7;
+    --dark: #0b2b33;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #dbe8ec;
+      --ink-muted: #8aa4ad;
+      --ground: #0d1a1f;
+      --surface: #12242b;
+      --line: #1f3944;
+      --accent: #3cc8e8;
+      --accent-soft: #10333d;
+      --code-bg: #0e222a;
+      --dark: #9fd9e8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #dbe8ec;
+    --ink-muted: #8aa4ad;
+    --ground: #0d1a1f;
+    --surface: #12242b;
+    --line: #1f3944;
+    --accent: #3cc8e8;
+    --accent-soft: #10333d;
+    --code-bg: #0e222a;
+    --dark: #9fd9e8;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* Masthead */
+  .masthead { border-bottom: 3px solid var(--accent); padding-bottom: 20px; margin-bottom: 34px; }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+  }
+  h1 { font-size: clamp(28px, 4.5vw, 40px); font-weight: 800; letter-spacing: -0.5px; line-height: 1.15; text-wrap: balance; }
+  .standfirst { color: var(--ink-muted); font-size: 16.5px; max-width: 62ch; margin-top: 10px; }
+
+  /* Numbers strip */
+  .figures { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--line); background: var(--surface); margin: 28px 0 40px; }
+  .figure { flex: 1 1 120px; padding: 16px 18px; border-right: 1px solid var(--line); min-width: 130px; }
+  .figure:last-child { border-right: none; }
+  .figure b { display: block; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.4px; }
+  .figure span { font-size: 12px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+
+  h2 {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.2px;
+    margin: 44px 0 6px; padding-top: 20px; border-top: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 .count { font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 2px 9px; border-radius: 999px; }
+  .lede { color: var(--ink-muted); max-width: 70ch; margin-bottom: 18px; }
+
+  /* File entries */
+  .file { display: grid; grid-template-columns: 205px 1fr; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .file:last-child { border-bottom: none; }
+  .file-id { min-width: 0; }
+  .file-name { font-family: Consolas, "Cascadia Mono", monospace; font-size: 13.5px; font-weight: 700; color: var(--accent); word-break: break-all; }
+  .file-meta { font-size: 11.5px; color: var(--ink-muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .file-desc b { display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .file-desc p { color: var(--ink); font-size: 14px; max-width: 68ch; }
+  .file-desc p + p { margin-top: 6px; }
+  code {
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.88em;
+    background: var(--code-bg); border: 1px solid var(--line);
+    padding: 1px 5px; border-radius: 4px; white-space: nowrap;
+  }
+  .file-desc code { white-space: normal; }
+  .route { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; background: var(--code-bg); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; }
+
+  /* Layers */
+  .layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 22px 0 8px; }
+  .layer { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent); padding: 16px 18px; }
+  .layer h3 { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+  .layer h3 small { font-weight: 600; color: var(--ink-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-left: 6px; }
+  .layer p { font-size: 13.5px; color: var(--ink-muted); }
+  .layer p code { font-size: 11.5px; }
+
+  /* Request path */
+  .flow { background: var(--surface); border: 1px solid var(--line); padding: 20px 22px; margin: 20px 0; }
+  .flow ol { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 0; }
+  .flow li { counter-increment: step; position: relative; padding: 8px 0 8px 44px; font-size: 14px; }
+  .flow li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 8px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums;
+    display: grid; place-items: center;
+  }
+  .flow li + li { border-top: 1px dashed var(--line); }
+  .flow b { font-weight: 700; }
+  .flow .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12.5px; color: var(--accent); }
+
+  /* Callouts */
+  .callout { display: flex; gap: 12px; border-left: 3px solid var(--accent); background: var(--surface); border-top: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 14px 16px; margin: 18px 0; font-size: 14px; }
+  .callout b { font-weight: 700; }
+
+  footer { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-muted); font-size: 12.5px; }
+
+  @media (max-width: 640px) {
+    .file { grid-template-columns: 1fr; gap: 6px; }
+    .figure { min-width: 45%; border-bottom: 1px solid var(--line); }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Project Analysis</div>
+    <h1>SIWES Tracker — What Every File Does</h1>
+    <p class="standfirst">A student log-book app built twice: once as a server-rendered PHP site, and once as a REST API in FastAPI. Both share one MySQL database, so an entry logged in either appears in both. This is a file-by-file tour of how the whole thing fits together.</p>
+  </header>
+
+  <div class="figures" role="list" aria-label="Project size">
+    <div class="figure" role="listitem"><b>29</b><span>Source files</span></div>
+    <div class="figure" role="listitem"><b>~2,900</b><span>Lines of code</span></div>
+    <div class="figure" role="listitem"><b>2</b><span>Backends, one schema</span></div>
+    <div class="figure" role="listitem"><b>0</b><span>Frameworks in the PHP app</span></div>
+  </div>
+
+  <h2>The shape of the project<span class="count">overview</span></h2>
+  <p class="lede">The repo splits into five layers. The PHP app is a classic page-per-file site; the FastAPI backend mirrors its features as JSON endpoints. They never talk to each other directly — they meet at the database.</p>
+
+  <div class="layers">
+    <div class="layer"><h3>PHP web app<small>root *.php</small></h3><p>Server-rendered pages: <code>dashboard.php</code>, <code>logs.php</code>, <code>log_form.php</code> and friends. Each page handles its own GET/POST and prints HTML through shared partials.</p></div>
+    <div class="layer"><h3>FastAPI backend<small>backend/app/</small></h3><p>The same features as REST endpoints with JWT auth. Routers live in <code>router_auth.py</code>, <code>router_logs.py</code>, <code>router_misc.py</code>.</p></div>
+    <div class="layer"><h3>Shared database<small>database.sql</small></h3><p>One schema, two consumers. Two tables — <code>students</code> and <code>log_entries</code> — and a unique key that enforces one entry per student per week.</p></div>
+    <div class="layer"><h3>Frontend assets<small>assets/</small></h3><p>One hand-written stylesheet (light + dark themes) and one small vanilla JS file for the theme toggle, mobile sidebar and password eye.</p></div>
+    <div class="layer"><h3>Plumbing<small>partials/, config, seed</small></h3><p>The layout shell, the SVG icon set, DB credentials, helpers and a demo-data seeder round out the PHP side.</p></div>
+    <div class="layer"><h3>Verification<small>backend/smoke_test.py</small></h3><p>An end-to-end test that drives register → login → CRUD → stats against an in-memory database, plus the two README files.</p></div>
+  </div>
+
+  <h2>A request through the PHP app<span class="count">how it runs</span></h2>
+  <p class="lede">Every protected page walks the same path. Take <code>logs.php</code> as the example:</p>
+  <div class="flow">
+    <ol>
+      <li><b>Boot.</b> The page requires <code>helpers.php</code>, which loads <code>config.php</code> (credentials, session start) and <code>partials/icons.php</code> (the icon set).</li>
+      <li><b>Guard.</b> <code>require_login()</code> checks the session; an anonymous visitor is bounced to <code>login.php</code> with a flash message.</li>
+      <li><b>Handle.</b> For POST requests, <code>csrf_verify()</code> checks the token before any input is trusted.</li>
+      <li><b>Query.</b> Data comes back through PDO prepared statements scoped to <code>$_SESSION['student_id']</code> — a student can only ever see their own rows.</li>
+      <li><b>Render.</b> <code>partials/layout-top.php</code> opens the shell (sidebar, topbar, flash alerts), the page prints its section, <code>partials/layout-bottom.php</code> closes it and pulls in <code>assets/js/app.js</code>.</li>
+    </ol>
+  </div>
+
+  <h2>Database &amp; configuration<span class="count">3 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">database.sql</div><div class="file-meta">54 lines · schema</div></div>
+    <div class="file-desc">
+      <b>The shared contract</b>
+      <p>Creates the <code>siwes_tracker</code> database and its two tables. <code>students</code> holds accounts (matric number, name, hashed password, institution, placement details); <code>log_entries</code> holds weekly logs (week start, days, hours, work done, challenges, supervisor remarks).</p>
+      <p>Two details carry weight: <code>uq_student_week</code> — a unique key on <code>(student_id, week_start)</code> that makes duplicate weekly entries impossible even if the app code had a bug — and <code>ON DELETE CASCADE</code>, so deleting a student removes their entries cleanly.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">config.php</div><div class="file-meta">30 lines · PHP settings</div></div>
+    <div class="file-desc">
+      <b>One place to change everything</b>
+      <p>Defines the DB credentials (XAMPP defaults: <code>root</code>, empty password), the app name and URL, the timezone, and starts the session with hardened cookie flags (<code>httponly</code>, <code>samesite=Lax</code>). Every other PHP file reaches settings through here.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/.env.example</div><div class="file-meta">12 lines · Python settings template</div></div>
+    <div class="file-desc">
+      <b>The FastAPI twin of config.php</b>
+      <p>Documents the environment variables the Python backend reads: the same database fields, plus <code>JWT_SECRET</code> and token lifetime. Copy to <code>.env</code> and adjust; nothing secret is committed.</p>
+    </div>
+  </div>
+
+  <h2>PHP core — the plumbing every page leans on<span class="count">4 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">helpers.php</div><div class="file-meta">130 lines · function library</div></div>
+    <div class="file-desc">
+      <b>The app's toolkit</b>
+      <p>The most-reached file in the project. It provides <code>db()</code> (a lazily-created, shared PDO connection), <code>e()</code> (HTML-escaping used on every piece of printed data), <code>redirect()</code>, and the auth trio: <code>is_logged_in()</code>, <code>require_login()</code>, <code>current_student()</code>.</p>
+      <p>It also owns the security primitives — one-shot <code>flash()</code> messages, <code>csrf_token()</code> / <code>csrf_field()</code> / <code>csrf_verify()</code> — and the domain date logic: <code>week_start_of()</code> snaps any date to its Monday, <code>week_label()</code> formats a friendly range, and <code>siwes_week_number()</code> counts which week of the placement an entry belongs to.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">partials/icons.php</div><div class="file-meta">37 lines · icon set</div></div>
+    <div class="file-desc">
+      <b>One function, seventeen icons</b>
+      <p>Maps names like <code>'home'</code> or <code>'trash'</code> to inline SVG markup (Lucide-style strokes, 24×24). Inlining keeps the UI free of emoji icons and an icon-font dependency, and lets CSS color the icons with <code>currentColor</code>.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">partials/layout-top.php</div><div class="file-meta">88 lines · page shell (opens)</div></div>
+    <div class="file-desc">
+      <b>Everything around the content</b>
+      <p>Prints the <code>&lt;head&gt;</code>, the dark-teal sidebar (brand, nav with the active page highlighted, user avatar, logout), and the topbar with the menu and theme-toggle buttons. It then opens the content area and renders any pending flash messages as success/error alerts. Pages set <code>$page_title</code> and <code>$active</code> before including it.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">partials/layout-bottom.php</div><div class="file-meta">10 lines · page shell (closes)</div></div>
+    <div class="file-desc">
+      <b>The other half of the shell</b>
+      <p>Closes the content and main containers, prints the footer, and loads <code>assets/js/app.js</code>. Together with <code>layout-top.php</code> it guarantees every page has an identical frame.</p>
+    </div>
+  </div>
+
+  <h2>PHP auth pages<span class="count">3 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">login.php</div><div class="file-meta">83 lines · standalone page</div></div>
+    <div class="file-desc">
+      <b>The front door</b>
+      <p>A standalone page (no sidebar — it uses its own centered card layout). On POST it verifies the CSRF token, looks the email up, and checks the password with <code>password_verify()</code>. On success it regenerates the session ID (a session-fixation defence) and stores the student's ID in the session. The same generic error covers wrong email and wrong password, so the form can't be used to discover which accounts exist.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">register.php</div><div class="file-meta">137 lines · standalone page</div></div>
+    <div class="file-desc">
+      <b>Account creation with field-level validation</b>
+      <p>Validates each field individually and re-renders the form with inline errors and the submitted values preserved: required fields, email format, an 8-character password minimum, matching confirmation, then a database check that neither the email nor matric number is already taken (each gets its own message). Passwords are stored with <code>password_hash()</code> — bcrypt — which is exactly what the Python backend expects, so accounts work in both apps.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">logout.php</div><div class="file-meta">6 lines · action</div></div>
+    <div class="file-desc">
+      <b>The exit</b>
+      <p>Clears the <code>$_SESSION</code> array, destroys the session, redirects to the login page. Deliberately the smallest file in the project.</p>
+    </div>
+  </div>
+
+  <h2>PHP feature pages — the CRUD<span class="count">4 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">dashboard.php</div><div class="file-meta">177 lines · read</div></div>
+    <div class="file-desc">
+      <b>The landing page after login</b>
+      <p>Runs one aggregate query for the stat cards (weeks logged, total hours, days worked, week span), a second for the last 8 weeks' hours, and a third for the 5 most recent entries. The chart is pure CSS — each bar is a <code>&lt;div&gt;</code> whose height is a percentage — so it needs no chart library and adapts to the theme for free. A placement card shows the student's organisation and supervisor, and an empty state invites the first entry.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">logs.php</div><div class="file-meta">90 lines · read + search</div></div>
+    <div class="file-desc">
+      <b>The log book itself</b>
+      <p>Lists every entry, newest week first, in a table with days, hours, a truncated work-done summary, challenges and edit/delete actions. The search box filters by keyword against work done, challenges and week dates using a parameterised <code>LIKE</code> query — the <code>%</code> wildcards live in PHP, not in user-supplied SQL.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">log_form.php</div><div class="file-meta">146 lines · create + update</div></div>
+    <div class="file-desc">
+      <b>One form, two jobs</b>
+      <p>The heart of the CRUD. Opened without an ID it creates; opened as <code>log_form.php?id=5</code> it loads that entry and updates it. Validation mirrors the database: the week date is snapped to Monday, days must be 1–7, hours 0.5–168, work-done is required, and a duplicate-week check (excluding the entry being edited) runs before insert — so the user gets a friendly "you already logged this week" instead of a raw SQL error.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">log_delete.php</div><div class="file-meta">53 lines · delete</div></div>
+    <div class="file-desc">
+      <b>Deletion with a speed bump</b>
+      <p>GET shows a confirmation page summarising the entry (week, days, hours, a quote of the work done); POST with a valid CSRF token performs the <code>DELETE</code>. Both queries are scoped to the logged-in student's ID, so one student can never delete another's entry even by guessing IDs.</p>
+    </div>
+  </div>
+
+  <h2>PHP profile &amp; utilities<span class="count">3 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">profile.php</div><div class="file-meta">157 lines · read + update</div></div>
+    <div class="file-desc">
+      <b>Two forms, one page</b>
+      <p>Dispatches on a hidden <code>action</code> field: <code>details</code> updates name, institution, course and placement info; <code>password</code> verifies the current password before storing the new hash. The matric number is shown read-only (it's the academic identifier, not a preference). Field-level errors render inline, same pattern as the register page.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">seed.php</div><div class="file-meta">63 lines · demo utility</div></div>
+    <div class="file-desc">
+      <b>Sample data for demos</b>
+      <p>Wipes the tables and creates one demo student (<code>demo@siwes.test</code> / <code>demo1234</code>) with eight realistic weeks of entries, so the dashboard chart has something to show. Designed to be run once and deleted — it resets all data.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">router.php</div><div class="file-meta">33 lines · dev-server router</div></div>
+    <div class="file-desc">
+      <b>Only needed without Apache</b>
+      <p>Lets the app run on PHP's built-in server (<code>php -S localhost:8000 router.php</code>): it serves real files directly, sends the root to the dashboard or login depending on session state, and maps <code>/dashboard</code> to <code>dashboard.php</code>. Irrelevant under XAMPP, where Apache's directory routing does this.</p>
+    </div>
+  </div>
+
+  <h2>Frontend assets<span class="count">2 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">assets/css/style.css</div><div class="file-meta">693 lines · design system</div></div>
+    <div class="file-desc">
+      <b>The entire visual identity</b>
+      <p>The largest file in the project, and the only styling — no framework. It opens with two token blocks: a light palette on <code>:root</code> (warm-teal text on off-white, cyan primary, colour-coded stat accents) and a dark palette on <code>:root[data-theme="dark"]</code> that redefines only the tokens. Every component — sidebar, cards, stat tiles, tables, forms, alerts, the auth pages, the CSS bar chart — is then styled through those tokens, which is why the theme toggle is a one-attribute switch.</p>
+      <p>It also handles the responsive shell: below 860px the sidebar becomes an off-canvas drawer behind a backdrop, form grids collapse to one column, and a <code>prefers-reduced-motion</code> block stills the animations.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">assets/js/app.js</div><div class="file-meta">71 lines · vanilla JS</div></div>
+    <div class="file-desc">
+      <b>Three behaviours, no libraries</b>
+      <p>The theme toggle (reads/writes <code>localStorage</code> and swaps the moon/sun icon), the mobile sidebar (hamburger opens, backdrop click and Escape close, <code>aria-expanded</code> kept honest), and the password show/hide eye on the auth forms. All three degrade gracefully — with JS off, the site still works, it just stays in light mode.</p>
+    </div>
+  </div>
+
+  <h2>FastAPI backend — structure<span class="count">4 files</span></h2>
+  <p class="lede">The Python backend mirrors the PHP app's features as JSON endpoints. Layout is conventional FastAPI: settings, session, security, models, schemas, then routers.</p>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/core/config.py</div><div class="file-meta">33 lines · settings</div></div>
+    <div class="file-desc">
+      <b>Typed configuration</b>
+      <p>A Pydantic <code>Settings</code> class reading <code>.env</code>: the same DB fields as <code>config.php</code> (same defaults), plus <code>JWT_SECRET</code>, algorithm and token lifetime. Cached via <code>@lru_cache</code> so the file is read once per process.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/core/database.py</div><div class="file-meta">35 lines · DB session</div></div>
+    <div class="file-desc">
+      <b>The SQLAlchemy engine</b>
+      <p>Builds the <code>mysql+pymysql</code> engine from settings (with <code>pool_pre_ping</code> so dropped connections self-heal) and a sessionmaker. <code>get_db()</code> yields a session per request and closes it in <code>finally</code> — the FastAPI idiom for dependency-injected transactions.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/core/security.py</div><div class="file-meta">39 lines · hashing + JWT</div></div>
+    <div class="file-desc">
+      <b>Where passwords and tokens meet</b>
+      <p>Bcrypt hashing via passlib — deliberately the same algorithm as PHP's <code>password_hash()</code>, which is what makes cross-app logins possible. Also issues JWTs (student ID as subject, 24-hour expiry) and decodes them, returning <code>None</code> on any invalid or expired token.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/models.py</div><div class="file-meta">56 lines · ORM models</div></div>
+    <div class="file-desc">
+      <b>Python's view of the shared tables</b>
+      <p><code>Student</code> and <code>LogEntry</code> mapped exactly onto the existing <code>students</code> and <code>log_entries</code> tables — column types match <code>database.sql</code> (including the <code>DECIMAL(5,1)</code> hours). There is no <code>create_all()</code> anywhere: the API treats the PHP app's schema as the source of truth, which is why both apps can write to the same data.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/schemas.py</div><div class="file-meta">106 lines · request/response contracts</div></div>
+    <div class="file-desc">
+      <b>Validation at the boundary</b>
+      <p>The Pydantic models each endpoint accepts and returns: <code>StudentCreate</code> (8-char password minimum, valid email), <code>LogEntryCreate</code> with its <code>snap_to_monday</code> validator — the direct equivalent of the PHP <code>week_start_of()</code> — plus separate read models that keep the password hash out of responses, and the dashboard stat/chart models.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/dependencies.py</div><div class="file-meta">26 lines · auth gate</div></div>
+    <div class="file-desc">
+      <b>Who is asking?</b>
+      <p>Extracts the <code>Bearer</code> token, decodes it, and loads the matching <code>Student</code> — or raises a 401. Any endpoint that takes <code>student = Depends(get_current_student)</code> is protected; the student object it returns is also the scoping rule for every query.</p>
+    </div>
+  </div>
+
+  <h2>FastAPI backend — the routers<span class="count">3 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/router_auth.py</div><div class="file-meta">65 lines · 3 routes</div></div>
+    <div class="file-desc">
+      <b>Register, login, me</b>
+      <p><code>POST /auth/register</code> upper-cases the matric number, checks email/matric uniqueness with distinct 409 messages, hashes and stores. <code>POST /auth/login</code> uses FastAPI's OAuth2 form so the Swagger "Authorize" button works natively, and returns the same generic error for unknown email and wrong password — mirroring <code>login.php</code>'s anti-enumeration stance. <code>GET /auth/me</code> returns the authenticated student.</p>
+      <p><span class="route">POST /auth/register</span> <span class="route">POST /auth/login</span> <span class="route">GET /auth/me</span></p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/router_logs.py</div><div class="file-meta">147 lines · 6 routes</div></div>
+    <div class="file-desc">
+      <b>The full CRUD surface</b>
+      <p>List with optional keyword search, fetch one by ID, fetch by week (any day snaps to Monday), create, partial-update via <code>PUT</code> with <code>exclude_unset</code> semantics, delete. A shared helper performs the duplicate-week check and raises <strong>409</strong>, matching the unique key in <code>database.sql</code>. Every query filters on the authenticated student's ID — the same ownership scoping the PHP app enforces.</p>
+      <p><span class="route">GET /logs</span> <span class="route">GET /logs/week/{date}</span> <span class="route">GET /logs/{id}</span> <span class="route">POST /logs</span> <span class="route">PUT /logs/{id}</span> <span class="route">DELETE /logs/{id}</span></p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/router_misc.py</div><div class="file-meta">93 lines · 5 routes</div></div>
+    <div class="file-desc">
+      <b>Dashboard and profile</b>
+      <p>One aggregate query powers <code>/dashboard/stats</code> (count, summed hours and days, week span); <code>/dashboard/chart</code> returns the last N weeks for the frontend chart. Profile endpoints read, patch and handle password changes (current password verified first). Errors use proper status codes: 400 for a wrong current password, 404 for missing entries.</p>
+      <p><span class="route">GET /dashboard/stats</span> <span class="route">GET /dashboard/chart</span> <span class="route">GET /profile</span> <span class="route">PATCH /profile</span> <span class="route">POST /profile/password</span></p>
+    </div>
+  </div>
+
+  <h2>FastAPI backend — app &amp; verification<span class="count">4 files</span></h2>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/app/main.py</div><div class="file-meta">45 lines · entry point</div></div>
+    <div class="file-desc">
+      <b>Wiring</b>
+      <p>Creates the FastAPI app, adds permissive CORS for local development (the PHP frontend and any dev server can call it), mounts the three routers, and exposes <code>/</code> and <code>/health</code> as trivial liveness checks. Run with <code>uvicorn app.main:app</code>; interactive docs at <code>/docs</code>.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/smoke_test.py</div><div class="file-meta">173 lines · end-to-end test</div></div>
+    <div class="file-desc">
+      <b>The proof it all works</b>
+      <p>Overrides the database dependency with an in-memory SQLite database (creating the same tables via the models) and drives the whole user journey in one assertion chain: register (including matric upper-casing and duplicate rejection), login, wrong-password 401, create with date-snapping, duplicate-week 409, field validation 422, search, update, dashboard math, password change and re-login, delete, cross-user isolation (student B gets 404 on student A's entry), and a tampered-token 401. Run with <code>python smoke_test.py</code>.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">backend/requirements.txt<br>backend/.gitignore</div><div class="file-meta">12 + 10 lines · metadata</div></div>
+    <div class="file-desc">
+      <b>Reproducibility</b>
+      <p>Pins the runtime dependencies (FastAPI, uvicorn, SQLAlchemy, PyMySQL, passlib, PyJWT, pydantic-settings and friends — notably <code>bcrypt&lt;4.1</code>, the version passlib is compatible with) and keeps caches and <code>.env</code> out of version control.</p>
+    </div>
+  </div>
+
+  <div class="file">
+    <div class="file-id"><div class="file-name">README.md<br>backend/README.md</div><div class="file-meta">66 + 66 lines · docs</div></div>
+    <div class="file-desc">
+      <b>The setup manuals</b>
+      <p>The root README covers the PHP app: XAMPP setup steps, the import of <code>database.sql</code>, the project tree, and the security talking points for a viva. The backend README covers the virtualenv, the uvicorn command, a full endpoint table and a curl smoke test.</p>
+    </div>
+  </div>
+
+  <h2>The two apps, side by side<span class="count">parity</span></h2>
+  <p class="lede">Same database, same rules, two runtimes. Each security or domain rule in the PHP app has a direct counterpart in the API:</p>
+  <div class="flow">
+    <ol>
+      <li><b>Weeks snap to Monday</b> — <code>week_start_of()</code> in <code>helpers.php</code> ↔ the <code>snap_to_monday</code> validator in <code>schemas.py</code>.</li>
+      <li><b>One entry per week</b> — the unique key in <code>database.sql</code>, pre-checked in <code>log_form.php</code> ↔ pre-checked with a 409 in <code>router_logs.py</code>.</li>
+      <li><b>Ownership scoping</b> — every query carries <code>student_id</code> from the session ↔ from the JWT subject.</li>
+      <li><b>Passwords</b> — <code>password_hash()</code> ↔ bcrypt via passlib: the same hashes, so either app can verify them.</li>
+      <li><b>Request tampering</b> — CSRF tokens on forms ↔ JWT signatures on API calls.</li>
+      <li><b>Quiet errors</b> — one generic login failure in both, no account enumeration.</li>
+    </ol>
+  </div>
+
+  <div class="callout"><span><b>If you only remember one thing:</b> the app is deliberately boring architecture done carefully — page-per-file PHP with prepared statements and escaped output, a REST twin with JWT, and one database whose unique key enforces the one rule that matters most.</span></div>
+
+  <footer>SIWES Tracker · project analysis · 29 source files, ~2,950 lines · PHP + FastAPI over a shared MySQL schema</footer>
+
+</div>
