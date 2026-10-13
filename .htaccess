@@ -1,0 +1,32 @@
+# Web access rules for the SIWES Tracker.
+#
+# Why this file exists: the app folder is reachable through Apache's DocumentRoot
+# (C:/xampp/htdocs/siwes tracker is a junction to this working tree), so every
+# file in the repo is in the web root unless a rule here says otherwise.
+# Without it, http://localhost/siwes%20tracker/.git/config returns 200.
+
+# ---- Files that are never public -----------------------------------------
+# Agent notes, course material, schema, secrets, build config.
+<FilesMatch "\.(md|sql|json|log|ini|env)$">
+    Require all denied
+</FilesMatch>
+
+# Course material lives at the repo root; open it from disk, not over HTTP.
+<FilesMatch "^(siwes-tracker-decoded|project-analysis)\.html$">
+    Require all denied
+</FilesMatch>
+
+# ---- Directories that are never public ------------------------------------
+# backend/ (Python), tests/, and the course/reference docs. The <Directory>
+# directive cannot be used in .htaccess, so these are matched by URL path.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Dotfiles anywhere in the path: .git, .env, .htaccess. This must be a path
+    # rule, not <FilesMatch "^\."> — FilesMatch only sees the basename, so it
+    # never matches ".git" in ".git/config".
+    RewriteRule (^|/)\. - [F,L]
+    RewriteRule ^(backend|docs|lessons|reference|learning-records|tests|assets/teach)(/|$) - [F,L]
+</IfModule>
+
+# ---- Handlers --------------------------------------------------------------
+DirectoryIndex dashboard.php index.php

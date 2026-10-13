@@ -13,5 +13,5 @@ Single lesson (2026-09-14, user asked for "one very long lesson with everything"
 
 ## Working notes
 - 2026-09-14: Rebuilt workspace — first mission (databases/scalability) rejected; user redirected to "teach me THIS project". Deleted old files, rewrote MISSION/RESOURCES.
-- Oddity to mention in a later lesson: `config.php` defines `APP_URL` but nothing uses it; `router.php` is only for `php -S`. README references old weekly schema; actual `database.sql` is daily (`entry_date`, `uq_student_day`) — README/schema drift is a good L9 discussion.
+- Oddity to mention in a later lesson: `config.php` defines `APP_URL` but nothing uses it; `router.php` is only for `php -S`. Week maths, dashboard aggregates and validation were split out of `helpers.php` into `weeks.php`, `stats.php` and `validation.php` *after* the course was written, so `reference/file-map.html` lists them as not-yet-taught — that split is a good L9 discussion about file organisation.
 - The app is genuinely well-built (PDO, CSRF, escaping, session_regenerate_id) — teaching it line-by-line doubles as security-literacy training. Use that.

@@ -19,13 +19,22 @@ A simple, clean web app where students log their daily SIWES work — built with
 siwes tracker/
 ├── assets/
 │   ├── css/style.css      ← design system (light + dark)
-│   └── js/app.js          ← theme toggle, mobile sidebar, password eye
+│   ├── js/app.js          ← theme toggle, mobile sidebar, password eye
+│   └── teach/             ← course-player CSS/JS, not part of the app
 ├── partials/
 │   ├── layout-top.php     ← shared shell (sidebar, topbar, flashes)
 │   ├── layout-bottom.php
 │   └── icons.php          ← inline SVG icon set
+├── tests/
+│   ├── run.php            ← unit suite, no database needed
+│   ├── weeks.php          ← week maths, runs standalone
+│   └── mysql.php          ← integration tests, opt-in via --mysql
 ├── config.php             ← DB credentials + app constants
-├── helpers.php            ← db(), e(), flash, CSRF, date helpers
+├── helpers.php            ← requires config, weeks, stats, validation, icons;
+│                             adds db(), e(), flash, CSRF, auth helpers
+├── weeks.php              ← siwes_week_number(), siwes_week_span()
+├── stats.php              ← the dashboard's aggregate queries + chart data
+├── validation.php         ← validate_log_fields(), validate_registration_fields()
 ├── database.sql           ← schema — import this first
 ├── login.php  register.php  logout.php
 ├── dashboard.php          ← stats + chart + recent entries
@@ -34,29 +43,45 @@ siwes tracker/
 ├── log_delete.php         ← delete with confirmation (Delete)
 ├── profile.php            ← details + password change
 ├── seed.php               ← optional demo data (delete after use)
-└── router.php             ← only for `php -S` dev server
+├── router.php             ← only for `php -S` dev server
+├── .htaccess              ← keeps .git, docs, tests, *.md and *.sql off HTTP
+├── check.ps1              ← lint + standards + tests: the repo's check command
+├── AGENTS.md              ← agent guidance for this repo
+├── CODING_STANDARDS.md    ← the rules a change has to hold to
+└── RUNNING.md             ← starting it on this machine, and proving it works
 ```
 
 ## Setup (XAMPP — the usual way)
 
-1. **Copy the project** into `C:\xampp\htdocs\siwes tracker` (or clone there).
-2. **Start Apache + MySQL** in the XAMPP control panel.
-3. **Import the database** — open [phpMyAdmin](http://localhost/phpmyadmin) → *Import* → choose `database.sql` → Go.
-   (Or from a terminal: `mysql -u root < database.sql`.)
-4. **Check credentials** — open `config.php`. Defaults are XAMPP's: host `127.0.0.1`, user `root`, empty password. Change `APP_URL` if you rename the folder.
-5. **Open the app** — visit `http://localhost/siwes%20tracker/` and register an account.
-   - Want sample data first? Visit `http://localhost/siwes%20tracker/seed.php`, log in with `demo@siwes.test` / `demo1234`, then **delete `seed.php`**.
+`RUNNING.md` has the exact commands, including the fact that PHP and MySQL are **not** on this machine's PATH.
+
+1. **Serve the working tree** — `C:\xampp\htdocs\siwes tracker` is a *junction* to this folder, so Apache already serves this code. Do not copy files into `htdocs`; that is how the two trees drifted apart before.
+2. **Start Apache + MySQL** — `C:\xampp\apache_start.bat` and `C:\xampp\mysql_start.bat`, or the XAMPP control panel.
+3. **Import the database** — `& C:\xampp\mysql\bin\mysql.exe -u root -e "CREATE DATABASE IF NOT EXISTS siwes_tracker;"` then pipe `database.sql` in. Or use [phpMyAdmin](http://localhost/phpmyadmin) → *Import*.
+4. **Check credentials** — `config.php`. Defaults are XAMPP's: host `127.0.0.1`, user `root`, empty password.
+5. **Open the app** — <http://localhost/siwes%20tracker/> and register an account. `/` resolves to `dashboard.php`, which redirects to `login.php` when signed out.
+   - Want sample data first? Visit <http://localhost/siwes%20tracker/seed.php>, log in with `demo@siwes.test` / `demo1234`, then **delete `seed.php`**.
+6. **Verify** — `RUNNING.md` has a route sweep. A single `200` from `login.php` does not prove the app works.
 
 ## Setup (PHP's built-in server — no Apache)
 
-If PHP is on your PATH but you don't want Apache:
+`router.php` exists for this. MySQL still needs to be running.
 
 ```powershell
-mysql -u root < database.sql      # still needs MySQL running (XAMPP's MySQL works)
-php -S localhost:8000 router.php
+& C:\xampp\php\php.exe -S localhost:8000 router.php
 ```
 
 Then open http://localhost:8000.
+
+## Checks
+
+```powershell
+& .\check.ps1              # php -l over every file, then the test suite
+& .\check.ps1 -Smoke       # also probe the running app over HTTP
+& .\check.ps1 -Mysql       # include integration tests (needs SIWES_TEST_DB=siwes_tracker_test)
+```
+
+The suite runs on every commit via `.githooks/pre-commit`. After cloning, enable it once with `git config core.hooksPath .githooks`.
 
 ## Notes for the demo/viva
 

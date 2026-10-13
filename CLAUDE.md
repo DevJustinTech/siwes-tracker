@@ -1,17 +1,5 @@
 # SIWES Tracker
 
-A PHP/MySQL web app for tracking SIWES (industrial training) activity logs, with a `backend/` directory and page-level PHP scripts at the repo root.
+Project instructions live in [`AGENTS.md`](AGENTS.md) — read that before working here.
 
-## Agent skills
-
-### Issue tracker
-
-Issues and specs live as local markdown files under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five canonical triage roles are used with their default label strings. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+`AGENTS.md` is the single source of truth for agent guidance in this repo. It is the file opencode loads; this file exists so Claude Code finds the pointer. Keep guidance in `AGENTS.md`, not here.

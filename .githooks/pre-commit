@@ -1,0 +1,14 @@
+#!/bin/sh
+# Pre-commit hook: PHP syntax lint + test suite.
+#
+# Enabled by .git/config -> core.hooksPath = .githooks, so this file is
+# versioned and a fresh clone gets it after running:
+#
+#     git config core.hooksPath .githooks
+#
+# Runs check.ps1 without -Smoke on purpose: a commit must not depend on a
+# running Apache. The path comes from git, so it resolves correctly no matter
+# where the hook is invoked from.
+
+top="$(git rev-parse --show-toplevel)"
+exec powershell -NoProfile -ExecutionPolicy Bypass -File "$top/check.ps1"

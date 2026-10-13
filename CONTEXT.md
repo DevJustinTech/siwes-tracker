@@ -17,9 +17,11 @@ The earliest date worked in a student's current log book, not the date the recor
 **SIWES week**:
 A numbered seven-day window starting at the first logged day; the first window is Week 1. These are not Monday-based calendar weeks.
 _Avoid_: Calendar week
+_Implemented by_: `weeks.php` (`siwes_week_number()`), covered by `tests/weeks.php`
 
 **Week span**:
 The SIWES week number of the last logged day; an empty log book has a span of zero. Gaps without entries still count toward the span.
+_Implemented by_: `weeks.php` (`siwes_week_span()`)
 
 **Logged day**:
 A date for which the student has a daily entry. The hours chart shows up to the latest ten logged days, not ten consecutive calendar days.
