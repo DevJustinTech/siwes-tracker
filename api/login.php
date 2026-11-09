@@ -23,8 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($student && password_verify($password, $student['password_hash'])) {
             session_regenerate_id(true);
-            $_SESSION['student_id'] = (int)$student['id'];
-            $_SESSION['student_name'] = $student['full_name'];
+            $_SESSION = [
+                'student_id'   => (int)$student['id'],
+                'student_name' => $student['full_name'],
+            ];
             redirect('dashboard.php');
         }
         $error = 'Invalid email or password.';
@@ -38,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Log in · <?= e(APP_NAME) ?></title>
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 </head>
 <body class="auth-body">
 <main class="auth-wrap">

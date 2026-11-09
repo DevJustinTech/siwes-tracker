@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create account · <?= e(APP_NAME) ?></title>
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 </head>
 <body class="auth-body">
 <main class="auth-wrap auth-wrap--wide">

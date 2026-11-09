@@ -12,6 +12,6 @@
     { "src": "/health", "dest": "/api/health.php" },
     { "src": "/(login|register|logout|dashboard|logs|log_form|log_delete|profile)\\.php", "dest": "/api/$1.php" },
     { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/api/dashboard.php" }
+    { "src": "/(.*)", "status": 404 }
   ]
 }

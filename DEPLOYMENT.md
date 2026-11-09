@@ -140,9 +140,11 @@ demo@siwes.test / demo1234
 | Update entry | `302`, new text visible |
 | Duplicate same-day entry | friendly error, no second row |
 | Delete entry | `302`, row removed |
-| Private paths (`database.pg.sql`, `README.md`, `api/lib/config.php`, `.git/config`, `tests/`, `scripts/`) | `302`, no source served |
+| Private paths (`database.pg.sql`, `README.md`, `api/lib/config.php`, `.git/config`, `tests/`, `scripts/`) | `404`, no source served |
+| `/favicon.ico`, `/does-not-exist` | `404` |
+| `/assets/favicon.svg` | `200` |
 | Security headers | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` present; `X-Powered-By` removed |
-| Sessions after testing | 34 rows in `sessions` (DB-backed sessions working) |
+| Sessions after testing | DB-backed sessions working (rows present in `sessions`) |
 
 ### Neon + libpq note
 
@@ -155,6 +157,20 @@ options=endpoint=ep-...-pooler
 
 `api/lib/helpers.php` adds this automatically for `*.neon.tech` hosts. Without
 it, the connection fails with "Endpoint ID is not specified".
+
+### Session consistency fix
+
+Live browser testing caught a race: PHP writes DB-backed sessions during
+shutdown, after the response is sent. The redirect after login could therefore
+reach the dashboard before the session row was committed, briefly treating the
+user as signed out. `redirect()` now calls `session_write_close()` before
+sending `Location`, and login resets the session payload after regeneration.
+Five consecutive live login checks completed with no false "Please log in"
+flash.
+
+A browser favicon request had also been hitting the old catch-all dashboard
+route and leaving an error in the anonymous session. Unknown paths now return
+`404`, and the app ships its own SVG favicon.
 
 ## Notes for the report
 

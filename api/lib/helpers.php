@@ -107,9 +107,12 @@ function e(?string $value): string
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-/** Redirect and stop */
+/** Redirect and stop. Close the session first so DB-backed writes land before the next request. */
 function redirect(string $path): void
 {
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
     header('Location: ' . $path);
     exit;
 }
