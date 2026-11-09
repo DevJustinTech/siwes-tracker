@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/lib/helpers.php';
 boot();
 require_login();
 
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id > 0) {
             $stmt = db()->prepare(
                 'UPDATE log_entries
-                 SET entry_date = ?, hours_worked = ?, work_done = ?, challenges = ?, remarks = ?
+                 SET entry_date = ?, hours_worked = ?, work_done = ?, challenges = ?, remarks = ?, updated_at = now()
                  WHERE id = ? AND student_id = ?'
             );
             $stmt->execute([$entryDate, $hoursWorked, $workDone, $challenges, $remarks, $id, $student['id']]);
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $page_title = $id > 0 ? 'Edit entry' : 'New daily entry';
 $active     = 'logs';
-require __DIR__ . '/partials/layout-top.php';
+require __DIR__ . '/lib/partials/layout-top.php';
 ?>
 
 <section class="page-head">
@@ -117,4 +117,4 @@ require __DIR__ . '/partials/layout-top.php';
     </form>
 </section>
 
-<?php require __DIR__ . '/partials/layout-bottom.php'; ?>
+<?php require __DIR__ . '/lib/partials/layout-bottom.php'; ?>

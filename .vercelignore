@@ -1,0 +1,24 @@
+# Only api/ and assets/ are needed at runtime. Everything else stays in the
+# repository (tests, docs, teaching material) but is not uploaded to Vercel.
+.git
+.github
+.githooks
+.vercel
+backend
+docs
+lessons
+learning-records
+reference
+tests
+scripts
+assets/teach
+*.md
+*.docx
+*.ps1
+*.html
+database.sql
+database.pg.sql
+router.php
+.htaccess
+.env
+.env.*

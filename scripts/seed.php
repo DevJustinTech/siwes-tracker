@@ -1,24 +1,28 @@
 <?php
 /**
  * Seeds a demo student + a few weeks of daily log entries so the dashboard
- * isn't empty. Run once, then DELETE this file (it's for demos only):
- *   http://localhost/siwes%20tracker/seed.php
+ * isn't empty. Run once from the command line, with DATABASE_URL set:
+ *   DATABASE_URL=postgresql://... php scripts/seed.php
  */
 
 declare(strict_types=1);
-require_once __DIR__ . '/helpers.php';
-boot();
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+require_once __DIR__ . '/../api/lib/helpers.php';
 
 try {
     $pdo = db();
 
-    // Wipe demo data and re-create
-    $pdo->exec('DELETE FROM log_entries');
-    $pdo->exec('DELETE FROM students');
+    // Wipe demo data and re-create. TRUNCATE also resets the identity columns.
+    $pdo->exec('TRUNCATE TABLE log_entries, students RESTART IDENTITY CASCADE');
+    $pdo->exec('DELETE FROM sessions');
 
     $stmt = $pdo->prepare(
         'INSERT INTO students (matric_no, full_name, email, password_hash, institution, course_of_study, placement_org, industry_supervisor)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         RETURNING id'
     );
     $stmt->execute([
         'CSC/2021/0123',
@@ -30,7 +34,7 @@ try {
         'TechHub Solutions Ltd, Enugu',
         'Mr. Chinedu Eze',
     ]);
-    $studentId = (int)$pdo->lastInsertId();
+    $studentId = (int)$stmt->fetchColumn();
 
     // Four weeks of working days (Mon–Fri). Each day has its own note.
     $weeks = [
@@ -82,13 +86,8 @@ try {
         }
     }
 
-    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Seeded</title></head>';
-    echo '<body style="font-family:sans-serif;max-width:480px;margin:80px auto;text-align:center">';
-    echo '<h2>✅ Demo data created</h2>';
-    echo '<p>Log in with:<br><strong>demo@siwes.test</strong> / <strong>demo1234</strong></p>';
-    echo '<p><a href="login.php">Go to login →</a></p>';
-    echo '<p style="color:#b91c1c"><small>Now delete seed.php from the project folder.</small></p>';
-    echo '</body></html>';
+    echo "Demo data created.\n";
+    echo "Log in with: demo@siwes.test / demo1234\n";
 } catch (Throwable $ex) {
     http_response_code(500);
     echo 'Seeding failed: ' . htmlspecialchars($ex->getMessage());

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/lib/helpers.php';
 boot();
 require_login();
 
@@ -10,7 +10,7 @@ $q       = trim($_GET['q'] ?? '');
 if ($q !== '') {
     $stmt = db()->prepare(
         'SELECT * FROM log_entries
-         WHERE student_id = ? AND (work_done LIKE ? OR challenges LIKE ? OR entry_date LIKE ?)
+         WHERE student_id = ? AND (work_done ILIKE ? OR challenges ILIKE ? OR entry_date::text ILIKE ?)
          ORDER BY entry_date DESC'
     );
     $like = '%' . $q . '%';
@@ -26,7 +26,7 @@ $firstDay = siwes_first_entry_date(db(), (int)$student['id']);
 
 $page_title = 'My Log Book';
 $active     = 'logs';
-require __DIR__ . '/partials/layout-top.php';
+require __DIR__ . '/lib/partials/layout-top.php';
 ?>
 
 <section class="page-head">
@@ -88,4 +88,4 @@ require __DIR__ . '/partials/layout-top.php';
     <?php endif; ?>
 </section>
 
-<?php require __DIR__ . '/partials/layout-bottom.php'; ?>
+<?php require __DIR__ . '/lib/partials/layout-bottom.php'; ?>

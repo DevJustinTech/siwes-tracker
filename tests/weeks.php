@@ -1,7 +1,7 @@
 <?php
 /** Run directly: php tests/weeks.php. No database or session required. */
 declare(strict_types=1);
-require_once __DIR__ . '/../weeks.php';
+require_once __DIR__ . '/../api/lib/weeks.php';
 
 $failures = 0;
 $checks = 0;

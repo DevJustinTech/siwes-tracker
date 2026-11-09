@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/*.php": {
+      "runtime": "vercel-php@0.9.0",
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    { "src": "/", "dest": "/api/dashboard.php" },
+    { "src": "/health", "dest": "/api/health.php" },
+    { "src": "/(login|register|logout|dashboard|logs|log_form|log_delete|profile)\\.php", "dest": "/api/$1.php" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/api/dashboard.php" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

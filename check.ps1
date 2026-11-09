@@ -65,7 +65,7 @@ foreach ($file in $phpFiles) {
 # These four rules are mechanical, so they are enforced here rather than left to
 # review. See CODING_STANDARDS.md.
 Write-Host 'Standards' -ForegroundColor Cyan
-$appFiles = Get-ChildItem -File -Filter *.php
+$appFiles = Get-ChildItem -Path api -File -Filter *.php
 $allPhp   = $appFiles + (Get-ChildItem -Recurse -File -Filter *.php |
             Where-Object { $_.FullName -notmatch '\\(vendor|node_modules|\.git|__pycache__)\\' })
 

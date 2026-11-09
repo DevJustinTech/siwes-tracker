@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/lib/helpers.php';
 boot();
 
 if (is_logged_in()) {
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $matric      = strtoupper(trim($_POST['matric_no'] ?? ''));
     $fullName    = trim($_POST['full_name'] ?? '');
-    $email       = trim($_POST['email'] ?? '');
+    $email       = strtolower(trim($_POST['email'] ?? ''));
     $password    = $_POST['password'] ?? '';
     $confirm     = $_POST['password_confirm'] ?? '';
     $institution = trim($_POST['institution'] ?? '');

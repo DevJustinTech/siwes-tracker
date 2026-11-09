@@ -19,7 +19,7 @@ function test(string $name, callable $check): void
 }
 
 $timezone = date_default_timezone_get();
-require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../api/lib/helpers.php';
 test('includes do not start session or change timezone', function () use ($timezone) {
     same(PHP_SESSION_NONE, session_status());
     same($timezone, date_default_timezone_get());

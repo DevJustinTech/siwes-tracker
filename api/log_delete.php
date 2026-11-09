@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/lib/helpers.php';
 boot();
 require_login();
 
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $firstDay = siwes_first_entry_date(db(), (int)$student['id']);
 $page_title = 'Delete entry';
 $active     = 'logs';
-require __DIR__ . '/partials/layout-top.php';
+require __DIR__ . '/lib/partials/layout-top.php';
 ?>
 
 <section class="page-head">
@@ -52,4 +52,4 @@ require __DIR__ . '/partials/layout-top.php';
     </form>
 </section>
 
-<?php require __DIR__ . '/partials/layout-bottom.php'; ?>
+<?php require __DIR__ . '/lib/partials/layout-bottom.php'; ?>

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/lib/helpers.php';
 boot();
 require_login();
 
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors['full_name'] = 'Full name is required.';
         } else {
             $stmt = db()->prepare(
-                'UPDATE students SET full_name = ?, institution = ?, course_of_study = ?, placement_org = ?, industry_supervisor = ?
+                'UPDATE students SET full_name = ?, institution = ?, course_of_study = ?, placement_org = ?, industry_supervisor = ?, updated_at = now()
                  WHERE id = ?'
             );
             $stmt->execute([$fullName, $institution, $course, $org, $supervisor, $student['id']]);
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $errors = validate_password_change($current, $new, $confirm, $student['password_hash']);
         if (!$errors) {
-            $stmt = db()->prepare('UPDATE students SET password_hash = ? WHERE id = ?');
+            $stmt = db()->prepare('UPDATE students SET password_hash = ?, updated_at = now() WHERE id = ?');
             $stmt->execute([password_hash($new, PASSWORD_DEFAULT), $student['id']]);
             flash('success', 'Password changed.');
             redirect('profile.php');
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $page_title = 'Profile';
 $active     = 'profile';
-require __DIR__ . '/partials/layout-top.php';
+require __DIR__ . '/lib/partials/layout-top.php';
 ?>
 
 <section class="page-head">
@@ -147,4 +147,4 @@ require __DIR__ . '/partials/layout-top.php';
     </section>
 </div>
 
-<?php require __DIR__ . '/partials/layout-bottom.php'; ?>
+<?php require __DIR__ . '/lib/partials/layout-bottom.php'; ?>

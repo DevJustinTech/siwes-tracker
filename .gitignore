@@ -21,3 +21,8 @@ node_modules/
 # OS / editor noise
 Thumbs.db
 .DS_Store
+
+# Vercel local project link
+.vercel/
+.vercel
+.env*

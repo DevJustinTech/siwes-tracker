@@ -1,5 +1,10 @@
 # SIWES Tracker 📘
 
+> **Deployment branch:** this branch runs the same app on **Vercel + Neon
+> PostgreSQL**. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the live URL, schema
+> and deploy steps. The XAMPP instructions below describe the original
+> `baseline` branch.
+
 A simple, clean web app where students log their daily SIWES work — built with **plain PHP + MySQL (PDO)** and hand-rolled CSS. No frameworks, no Composer, no build step.
 
 ## Features

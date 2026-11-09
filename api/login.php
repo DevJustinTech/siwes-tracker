@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/lib/helpers.php';
 boot();
 
 // Already logged in? Straight to the dashboard.
@@ -11,7 +11,7 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
 
-    $email    = trim($_POST['email'] ?? '');
+    $email    = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
 
     if ($email === '' || $password === '') {

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/lib/helpers.php';
 boot();
 require_login();
 
@@ -17,7 +17,7 @@ $recent     = $stats['recent'];
 
 $page_title = 'Dashboard';
 $active     = 'dashboard';
-require __DIR__ . '/partials/layout-top.php';
+require __DIR__ . '/lib/partials/layout-top.php';
 ?>
 
 <section class="page-head">
@@ -145,4 +145,4 @@ require __DIR__ . '/partials/layout-top.php';
     <?php endif; ?>
 </section>
 
-<?php require __DIR__ . '/partials/layout-bottom.php'; ?>
+<?php require __DIR__ . '/lib/partials/layout-bottom.php'; ?>
