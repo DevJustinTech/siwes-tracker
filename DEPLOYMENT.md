@@ -168,3 +168,16 @@ it, the connection fails with "Endpoint ID is not specified".
   cookies when served over HTTPS.
 - **Least exposure** — `.vercelignore` keeps tests, documentation and teaching
   material out of the deployment; `vercel.json` routes only the public pages.
+
+## Trade-offs
+
+- `vercel-php` is a **community runtime**, not an official Vercel runtime. It is
+  archived upstream (October 2026) but still builds and runs successfully; Vercel
+  recommends containers for new long-term PHP projects.
+- Serverless functions cold-start in roughly 250 ms; Neon may also autosuspend on
+  the free plan, so the first request after idle is slower.
+- Each request opens a pooled PDO connection and reads/writes one session row;
+  that is the cost of stateless authentication.
+- The app has no file uploads, background jobs or cron work, so it fits the
+  serverless model without extra services.
+
