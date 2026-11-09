@@ -2,6 +2,7 @@
 /** Liveness check used after a deploy: proves the app can reach Neon. */
 declare(strict_types=1);
 require_once __DIR__ . '/lib/helpers.php';
+security_headers();
 
 header('Content-Type: application/json');
 

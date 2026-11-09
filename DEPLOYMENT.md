@@ -141,6 +141,7 @@ demo@siwes.test / demo1234
 | Duplicate same-day entry | friendly error, no second row |
 | Delete entry | `302`, row removed |
 | Private paths (`database.pg.sql`, `README.md`, `api/lib/config.php`, `.git/config`, `tests/`, `scripts/`) | `302`, no source served |
+| Security headers | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` present; `X-Powered-By` removed |
 | Sessions after testing | 34 rows in `sessions` (DB-backed sessions working) |
 
 ### Neon + libpq note

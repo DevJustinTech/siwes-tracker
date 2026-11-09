@@ -186,11 +186,23 @@ function day_label(string $date): string
     return date('D d M Y', strtotime($date));
 }
 
+/** Baseline browser hardening headers for every dynamic response. */
+function security_headers(): void
+{
+    if (headers_sent()) {
+        return;
+    }
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}
+
 /** Explicit request startup; reusable includes do not start sessions. */
 function boot(): void
 {
     date_default_timezone_set('Africa/Lagos');
     if (session_status() === PHP_SESSION_NONE) {
+        security_headers();
         $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
               || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
         session_set_cookie_params([
