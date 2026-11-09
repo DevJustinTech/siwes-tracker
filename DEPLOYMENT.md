@@ -140,7 +140,7 @@ demo@siwes.test / demo1234
 | Update entry | `302`, new text visible |
 | Duplicate same-day entry | friendly error, no second row |
 | Delete entry | `302`, row removed |
-| Private paths (`database.pg.sql`, `README.md`, `api/lib/config.php`, `.git/config`, `tests/`, `scripts/`) | `404`, no source served |
+| Private paths (`database.pg.sql`, `README.md`, `api/lib/config.php`, `.git/config`, `tests/`, `scripts/`) | `404` (or `403` under `/api/`), no source served |
 | `/favicon.ico`, `/does-not-exist` | `404` |
 | `/assets/favicon.svg` | `200` |
 | Security headers | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` present; `X-Powered-By` removed |
