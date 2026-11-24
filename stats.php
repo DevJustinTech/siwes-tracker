@@ -28,7 +28,6 @@ function student_stats(PDO $pdo, int $studentId): array
         'hours' => $hours,
         'avg_hours' => $entryCount > 0 ? $hours / $entryCount : 0.0,
         'first_day' => $totals['first_day'],
-        'last_day' => $totals['last_day'],
         'week_span' => siwes_week_span($totals['first_day'], $totals['last_day']),
         'chart_labels' => array_map(fn($r) => date('d M', strtotime($r['entry_date'])), $chartRows),
         'chart_data' => array_map(fn($r) => (float)$r['hours_worked'], $chartRows),

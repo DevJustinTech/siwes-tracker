@@ -15,6 +15,5 @@ define('DB_PORT', 3306);
 
 // ---- App ------------------------------------------------------------------
 define('APP_NAME', 'SIWES Tracker');
-define('APP_URL', '/siwes%20tracker');  // folder name under htdocs; adjust if you rename it
 
 // Request startup is explicit: pages call boot() from helpers.php.
